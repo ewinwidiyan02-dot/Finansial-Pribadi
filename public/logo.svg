@@ -1,0 +1,25 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGrad" x1="100" y1="0" x2="100" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Shield Background -->
+  <path d="M100 185C100 185 170 150 170 100V40L100 15L30 40V100C30 150 100 185 100 185Z" fill="url(#shieldGrad)" stroke="#334155" stroke-width="4"/>
+  
+  <!-- Graph/Arrow -->
+  <path d="M60 110L85 85L110 110L140 60" stroke="#10B981" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M140 60L140 85M140 60L115 60" stroke="#10B981" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Dots -->
+  <circle cx="60" cy="110" r="6" fill="#FFF"/>
+  <circle cx="85" cy="85" r="6" fill="#FFF"/>
+  <circle cx="110" cy="110" r="6" fill="#FFF"/>
+  <circle cx="140" cy="60" r="6" fill="#ECFDF5"/>
+</svg>
