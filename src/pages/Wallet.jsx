@@ -1,24 +1,32 @@
 import { useState, useEffect } from 'react';
 import WalletCard from '../components/WalletCard';
+import WalletForm from '../components/WalletForm';
 import { api } from '../services/api';
 
 export default function Wallet() {
     const [wallets, setWallets] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showAddForm, setShowAddForm] = useState(false);
+
+    async function fetchWallets() {
+        try {
+            const data = await api.getWallets();
+            setWallets(data || []);
+        } catch (error) {
+            console.error('Failed to fetch wallet data', error);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     useEffect(() => {
-        async function fetchWallets() {
-            try {
-                const data = await api.getWallets();
-                setWallets(data || []);
-            } catch (error) {
-                console.error('Failed to fetch wallet data', error);
-            } finally {
-                setLoading(false);
-            }
-        }
         fetchWallets();
     }, []);
+
+    const handleWalletAdded = () => {
+        setShowAddForm(false);
+        fetchWallets();
+    };
 
     const totalAssets = wallets.reduce((acc, curr) => acc + curr.balance, 0);
     const investmentAssets = wallets.filter(w => w.type === 'investment').reduce((acc, curr) => acc + curr.balance, 0);
@@ -31,8 +39,20 @@ export default function Wallet() {
                     <h2 className="text-xl">Dompet & Aset</h2>
                     <p className="text-secondary text-sm">Kelola semua akun keuangan Anda</p>
                 </div>
-                <button className="btn btn-primary">Tambah Dompet</button>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => setShowAddForm(!showAddForm)}
+                >
+                    {showAddForm ? 'Batal' : 'Tambah Dompet'}
+                </button>
             </header>
+
+            {showAddForm && (
+                <WalletForm
+                    onSave={handleWalletAdded}
+                    onCancel={() => setShowAddForm(false)}
+                />
+            )}
 
             <div style={{
                 display: 'grid',
