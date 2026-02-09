@@ -21,6 +21,28 @@ export const api = {
         return data;
     },
 
+    createCategory: async (category) => {
+        console.log("Saving category...", category);
+        const { data, error } = await supabase.from('categories').insert(category).select();
+        if (error) {
+            console.error("Supabase Error:", error);
+            throw error;
+        }
+        return data[0];
+    },
+
+    updateCategory: async (id, updates) => {
+        const { data, error } = await supabase.from('categories').update(updates).eq('id', id).select();
+        if (error) throw error;
+        return data[0];
+    },
+
+    deleteCategory: async (id) => {
+        const { error } = await supabase.from('categories').delete().eq('id', id);
+        if (error) throw error;
+        return true;
+    },
+
     // Transactions
     getTransactions: async () => {
         const { data, error } = await supabase
