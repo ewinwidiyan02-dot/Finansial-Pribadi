@@ -88,7 +88,8 @@ export const api = {
         const investmentBalance = wallets?.filter(w => w.type === 'investment').reduce((acc, curr) => acc + curr.balance, 0) || 0;
 
         // 2. Get This Month's Transactions for Income/Expense
-        const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+        const date = new Date();
+        const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toLocaleDateString('en-CA'); // YYYY-MM-DD Local
         const { data: currentMonthTrans } = await supabase
             .from('transactions')
             .select('amount, type, date')
@@ -145,7 +146,8 @@ export const api = {
         const { data: categories } = await supabase.from('categories').select('*');
 
         // Calculate spent per category for this month
-        const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+        const date = new Date();
+        const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toLocaleDateString('en-CA'); // YYYY-MM-DD Local
         const { data: transactions } = await supabase
             .from('transactions')
             .select('amount, category_id')
@@ -164,8 +166,10 @@ export const api = {
     },
 
     // Budget Helper
+    // Budget Helper
     getCategoryBudgetStatus: async (categoryId) => {
-        const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+        const date = new Date();
+        const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toLocaleDateString('en-CA'); // YYYY-MM-DD Local
 
         // Get Category Limit
         const { data: category } = await supabase.from('categories').select('budget_limit').eq('id', categoryId).single();

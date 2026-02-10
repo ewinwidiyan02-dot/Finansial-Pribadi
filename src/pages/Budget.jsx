@@ -26,9 +26,8 @@ export default function Budget() {
         try {
             setLoading(true);
             const data = await api.getBudgetData();
-            // Filter only expense categories for budget view, or show all but highlight expense
-            const expenseBudgets = data.filter(c => c.type === 'expense');
-            setBudgets(expenseBudgets || []);
+            // Show all categories. User might have budget limits on 'income' types too (e.g. Savings).
+            setBudgets(data || []);
         } catch (error) {
             console.error('Failed to fetch budget data', error);
         } finally {
