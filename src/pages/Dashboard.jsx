@@ -53,7 +53,7 @@ export default function Dashboard() {
 
             <div className="grid-summary" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                 <StatCard
-                    title="Total Saldo"
+                    title="Total Saldo (Uang Cash)"
                     amount={data.summary.balance}
                     icon={<MdAccountBalanceWallet />}
                     color="#3B82F6"
