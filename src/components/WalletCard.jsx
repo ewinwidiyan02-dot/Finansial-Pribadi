@@ -1,4 +1,4 @@
-import { MdAccountBalance, MdPhoneAndroid, MdMoney, MdTrendingUp } from 'react-icons/md';
+import { MdAccountBalance, MdPhoneAndroid, MdMoney, MdTrendingUp, MdSend } from 'react-icons/md';
 import { clsx } from 'clsx';
 // import './WalletCard.css';
 
@@ -9,7 +9,7 @@ const ICON_MAP = {
     investment: <MdTrendingUp />
 };
 
-export default function WalletCard({ name, type, balance, icon }) {
+export default function WalletCard({ name, type, balance, icon, onTransfer }) {
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
@@ -26,7 +26,8 @@ export default function WalletCard({ name, type, balance, icon }) {
             height: '160px',
             background: type === 'investment' ? 'linear-gradient(135deg, #059669 0%, #10B981 100%)' : 'var(--card-bg)',
             color: type === 'investment' ? 'white' : 'var(--text-primary)',
-            border: type === 'investment' ? 'none' : '1px solid var(--border-color)'
+            border: type === 'investment' ? 'none' : '1px solid var(--border-color)',
+            position: 'relative'
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{
@@ -35,15 +36,38 @@ export default function WalletCard({ name, type, balance, icon }) {
                 }}>
                     {ICON_MAP[type] || <MdAccountBalance />}
                 </div>
-                <span style={{
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                    fontWeight: 600,
-                    letterSpacing: '0.05em',
-                    opacity: 0.7
-                }}>
-                    {type}
-                </span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span style={{
+                        fontSize: '0.75rem',
+                        textTransform: 'uppercase',
+                        fontWeight: 600,
+                        letterSpacing: '0.05em',
+                        opacity: 0.7
+                    }}>
+                        {type}
+                    </span>
+                    {onTransfer && (
+                        <button
+                            onClick={onTransfer}
+                            title="Transfer ke Anggaran"
+                            style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '30px',
+                                height: '30px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: 'inherit',
+                                transition: 'background 0.2s'
+                            }}
+                        >
+                            <MdSend size={14} />
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div>

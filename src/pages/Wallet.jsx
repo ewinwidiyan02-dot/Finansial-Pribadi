@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import WalletCard from '../components/WalletCard';
 import WalletForm from '../components/WalletForm';
+import WalletTransferModal from '../components/WalletTransferModal';
 import { api } from '../services/api';
 
 export default function Wallet() {
     const [wallets, setWallets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [transferWallet, setTransferWallet] = useState(null);
 
     async function fetchWallets() {
         try {
+            setLoading(true);
             const data = await api.getWallets();
             setWallets(data || []);
         } catch (error) {
@@ -26,6 +29,34 @@ export default function Wallet() {
     const handleWalletAdded = () => {
         setShowAddForm(false);
         fetchWallets();
+    };
+
+    const handleTransfer = async ({ walletId, categoryId, amount }) => {
+        try {
+            // 1. Create Expense Transaction
+            const transaction = {
+                type: 'expense',
+                amount: amount,
+                category_id: categoryId,
+                wallet_id: walletId,
+                date: new Date().toISOString().split('T')[0],
+                description: 'Transfer ke Anggaran (Pagu)'
+            };
+            await api.createTransaction(transaction);
+
+            // 2. Increase Budget Limit
+            const { data: category } = await api.supabase.from('categories').select('budget_limit').eq('id', categoryId).single();
+            if (category) {
+                const newLimit = (category.budget_limit || 0) + amount;
+                await api.updateCategory(categoryId, { budget_limit: newLimit });
+            }
+
+            setTransferWallet(null);
+            fetchWallets();
+        } catch (error) {
+            console.error('Transfer failed', error);
+            throw error;
+        }
     };
 
     const totalAssets = wallets.reduce((acc, curr) => acc + curr.balance, 0);
@@ -51,6 +82,14 @@ export default function Wallet() {
                 <WalletForm
                     onSave={handleWalletAdded}
                     onCancel={() => setShowAddForm(false)}
+                />
+            )}
+
+            {transferWallet && (
+                <WalletTransferModal
+                    wallet={transferWallet}
+                    onClose={() => setTransferWallet(null)}
+                    onTransfer={handleTransfer}
                 />
             )}
 
@@ -83,6 +122,7 @@ export default function Wallet() {
                             name={w.name}
                             type={w.type}
                             balance={w.balance}
+                            onTransfer={() => setTransferWallet(w)}
                         />
                     ))}
                 </div>
