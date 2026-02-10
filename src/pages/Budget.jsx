@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { MdRestaurant, MdDirectionsCar, MdShoppingCart, MdReceipt, MdMovie, MdLocalHospital, MdAttachMoney, MdAdd, MdEdit, MdDelete } from 'react-icons/md';
+import { MdRestaurant, MdDirectionsCar, MdShoppingCart, MdReceipt, MdMovie, MdLocalHospital, MdAttachMoney, MdAdd, MdEdit, MdDelete, MdCompareArrows } from 'react-icons/md';
 import BudgetCard from '../components/BudgetCard';
 import CategoryForm from '../components/CategoryForm';
+import TransferModal from '../components/TransferModal';
 import { api } from '../services/api';
 
 const ICON_MAP = {
@@ -19,6 +20,7 @@ export default function Budget() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
+    const [transferCategory, setTransferCategory] = useState(null);
 
     async function fetchBudgets() {
         try {
@@ -61,6 +63,42 @@ export default function Budget() {
         fetchBudgets();
     };
 
+    const handleTransfer = async ({ type, amount, walletId, useWallet }) => {
+        if (!transferCategory) return;
+
+        try {
+            // 1. Create Transaction (if needed)
+            if (walletId) {
+                const transaction = {
+                    type: type === 'save' ? 'income' : 'expense',
+                    amount: amount,
+                    category_id: transferCategory.id,
+                    wallet_id: walletId,
+                    date: new Date().toISOString().split('T')[0],
+                    description: type === 'save' ? 'Sisa Anggaran' : 'Tambah Pagu Anggaran'
+                };
+
+                // Only create transaction if it's 'save' (always to wallet) or 'topup' WITH wallet usage
+                if (type === 'save' || (type === 'topup' && useWallet)) {
+                    await api.createTransaction(transaction);
+                }
+            }
+
+            // 2. Update Budget Limit
+            const newLimit = type === 'save'
+                ? (transferCategory.budget_limit || 0) - amount
+                : (transferCategory.budget_limit || 0) + amount;
+
+            await api.updateCategory(transferCategory.id, { budget_limit: newLimit });
+
+            setTransferCategory(null);
+            fetchBudgets();
+        } catch (error) {
+            console.error('Transfer failed', error);
+            throw error; // Let modal handle alert
+        }
+    };
+
     const totalBudget = budgets.reduce((acc, curr) => acc + (curr.budget_limit || 0), 0);
     const totalSpent = budgets.reduce((acc, curr) => acc + (curr.spent || 0), 0);
     const totalRemaining = totalBudget - totalSpent;
@@ -88,6 +126,14 @@ export default function Budget() {
                 />
             )}
 
+            {transferCategory && (
+                <TransferModal
+                    category={transferCategory}
+                    onClose={() => setTransferCategory(null)}
+                    onTransfer={handleTransfer}
+                />
+            )}
+
             <div className="card" style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', color: 'white' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                     <span>Total Anggaran Bulan Ini</span>
@@ -107,8 +153,15 @@ export default function Budget() {
                 {loading ? <p>Loading budgets...</p> : budgets.map((b) => (
                     <div key={b.id} style={{ position: 'relative' }}>
                         <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10, display: 'flex', gap: '8px' }}>
-                            <button onClick={() => handleEdit(b)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}><MdEdit /></button>
-                            <button onClick={() => handleDelete(b.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444' }}><MdDelete /></button>
+                            <button onClick={() => setTransferCategory(b)} title="Transfer/Atur Sisa" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3B82F6' }}>
+                                <MdCompareArrows size={20} />
+                            </button>
+                            <button onClick={() => handleEdit(b)} title="Edit" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                                <MdEdit size={20} />
+                            </button>
+                            <button onClick={() => handleDelete(b.id)} title="Hapus" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444' }}>
+                                <MdDelete size={20} />
+                            </button>
                         </div>
                         <BudgetCard
                             category={b.name}
