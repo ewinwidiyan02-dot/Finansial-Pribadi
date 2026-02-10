@@ -17,22 +17,7 @@ export default function Dashboard() {
         async function loadData() {
             try {
                 const dashboardData = await api.getDashboardData();
-                // Chart data logic would be more complex, we'll retain a fallback or simple generation for now
-                // For simplicity in this step, we keep the static chart or leave it empty if no data
-                const mockChart = [
-                    { name: 'Sen', amount: 0 },
-                    { name: 'Sel', amount: 0 },
-                    { name: 'Rab', amount: 0 },
-                    { name: 'Kam', amount: 0 },
-                    { name: 'Jum', amount: 0 },
-                    { name: 'Sab', amount: 0 },
-                    { name: 'Min', amount: 0 },
-                ];
-
-                setData({
-                    ...dashboardData,
-                    chart: mockChart // Enhancement: Fetch real daily trend
-                });
+                setData(dashboardData);
             } catch (error) {
                 console.error('Failed to load dashboard data', error);
             } finally {

@@ -112,6 +112,24 @@ export const api = {
             .order('date', { ascending: false })
             .limit(5);
 
+        // 5. Generate Chart Data (Daily Expense Trend)
+        const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        const chartData = Array.from({ length: daysInMonth }, (_, i) => {
+            const day = i + 1;
+            const dateStr = new Date(new Date().getFullYear(), new Date().getMonth(), day).toISOString().split('T')[0]; // YYYY-MM-DD (local logic approx)
+            // Note: simple string matching might have timezone issues if not careful, 
+            // but for a local app relying on 'date' column as string YYYY-MM-DD it's fine.
+            // Let's use the date string directly from DB which is YYYY-MM-DD
+            return { name: day.toString(), amount: 0, fullDate: dateStr };
+        });
+
+        currentMonthTrans?.filter(t => t.type === 'expense').forEach(t => {
+            const day = parseInt(t.date.split('-')[2], 10); // 2023-01-05 -> 5
+            if (day >= 1 && day <= daysInMonth) {
+                chartData[day - 1].amount += t.amount;
+            }
+        });
+
         return {
             summary: {
                 balance: totalBalance,
@@ -120,7 +138,8 @@ export const api = {
                 investment: investmentBalance,
                 budgetLimit: totalBudgetLimit
             },
-            transactions: recent || []
+            transactions: recent || [],
+            chart: chartData
         };
     },
 
