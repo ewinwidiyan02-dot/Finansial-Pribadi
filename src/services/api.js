@@ -80,7 +80,11 @@ export const api = {
     getDashboardData: async () => {
         // 1. Get Wallets for Total Balance & Investment
         const { data: wallets } = await supabase.from('wallets').select('balance, type');
-        const totalBalance = wallets?.reduce((acc, curr) => acc + curr.balance, 0) || 0;
+
+        // Total Saldo (Liquid Cash): Exclude investment
+        const totalBalance = wallets?.filter(w => w.type !== 'investment').reduce((acc, curr) => acc + curr.balance, 0) || 0;
+
+        // Total Investasi: Only investment
         const investmentBalance = wallets?.filter(w => w.type === 'investment').reduce((acc, curr) => acc + curr.balance, 0) || 0;
 
         // 2. Get This Month's Transactions for Income/Expense
