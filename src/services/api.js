@@ -190,5 +190,23 @@ export const api = {
             spent,
             remaining
         };
+    },
+
+    transferBudgetLimit: async (sourceId, targetId, amount) => {
+        // 1. Get Source Category
+        const { data: sourceCat } = await supabase.from('categories').select('budget_limit').eq('id', sourceId).single();
+        if (!sourceCat) throw new Error('Source category not found');
+
+        // 2. Get Target Category
+        const { data: targetCat } = await supabase.from('categories').select('budget_limit').eq('id', targetId).single();
+        if (!targetCat) throw new Error('Target category not found');
+
+        // 3. Update Source
+        const newSourceLimit = Math.max(0, (sourceCat.budget_limit || 0) - amount);
+        await supabase.from('categories').update({ budget_limit: newSourceLimit }).eq('id', sourceId);
+
+        // 4. Update Target
+        const newTargetLimit = (targetCat.budget_limit || 0) + amount;
+        await supabase.from('categories').update({ budget_limit: newTargetLimit }).eq('id', targetId);
     }
 };
