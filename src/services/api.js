@@ -98,7 +98,7 @@ export const api = {
             ?.filter(t => t.type === 'income')
             .reduce((acc, t) => acc + t.amount, 0) || 0;
         const expense = currentMonthTrans
-            ?.filter(t => t.type === 'expense')
+            ?.filter(t => t.type === 'expense' && t.wallet_id !== null) // Exclude budget transfers (no wallet) from real actual spending
             .reduce((acc, t) => acc + t.amount, 0) || 0;
 
         // 3. Get Budget Limits
@@ -200,8 +200,10 @@ export const api = {
         if (!targetCat) throw new Error('Target category not found');
 
         // 3. Update Source Limit
-        const newSourceLimit = Math.max(0, (sourceCat.budget_limit || 0) - amount);
-        await supabase.from('categories').update({ budget_limit: newSourceLimit }).eq('id', sourceId);
+        // REMOVED: Do not reduce source limit number. The 'expense' transaction below will act as the "usage" of that limit.
+        // If we reduce limit AND add expense, we double hit the source category.
+        // const newSourceLimit = Math.max(0, (sourceCat.budget_limit || 0) - amount);
+        // await supabase.from('categories').update({ budget_limit: newSourceLimit }).eq('id', sourceId);
 
         // 4. Record transaction for Source via 'expense' type
         // This works because type 'expense' is allowed, and without wallet_id it won't affect balance.
