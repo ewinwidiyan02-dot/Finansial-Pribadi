@@ -35,8 +35,8 @@ export default function TransactionForm({ onTransactionAdded }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!category || !wallet) {
-            alert('Mohon pilih kategori dan dompet');
+        if (!category) {
+            alert('Mohon pilih kategori');
             return;
         }
 
@@ -46,7 +46,7 @@ export default function TransactionForm({ onTransactionAdded }) {
                 type,
                 amount: parseFloat(amount),
                 category_id: category,
-                wallet_id: wallet,
+                wallet_id: wallet || null, // Send null if empty
                 date,
                 description
             };
@@ -56,6 +56,9 @@ export default function TransactionForm({ onTransactionAdded }) {
             // Reset form
             setAmount('');
             setDescription('');
+            // Keep the last selected wallet or reset? User might want to keep it. 
+            // Let's keep it for convenience, or strictly follow "reset form" implies all.
+            // The original code didn't reset wallet/category, only amount/desc.
             if (onTransactionAdded) onTransactionAdded();
 
         } catch (error) {
@@ -112,9 +115,9 @@ export default function TransactionForm({ onTransactionAdded }) {
                         </select>
                     </div>
                     <div>
-                        <label className="text-sm text-secondary">Dompet</label>
-                        <select value={wallet} onChange={(e) => setWallet(e.target.value)} required>
-                            <option value="">Pilih Dompet</option>
+                        <label className="text-sm text-secondary">Dompet (Opsional)</label>
+                        <select value={wallet} onChange={(e) => setWallet(e.target.value)}>
+                            <option value="">Tanpa Dompet</option>
                             {wallets.map(w => (
                                 <option key={w.id} value={w.id}>{w.name}</option>
                             ))}
