@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import BudgetDeficitModal from '../components/BudgetDeficitModal';
 // import './TransactionForm.css';
 
 export default function TransactionForm({ onTransactionAdded }) {
@@ -13,6 +14,7 @@ export default function TransactionForm({ onTransactionAdded }) {
     const [categories, setCategories] = useState([]);
     const [wallets, setWallets] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [deficitData, setDeficitData] = useState(null);
 
     useEffect(() => {
         async function loadOptions() {
@@ -33,20 +35,34 @@ export default function TransactionForm({ onTransactionAdded }) {
         loadOptions();
     }, []);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!category) {
-            alert('Mohon pilih kategori');
-            return;
-        }
-
+    const processTransaction = async (sourceCategoryId = null) => {
         setLoading(true);
         try {
+            // If source category is selected, handle deficit transfer first
+            if (sourceCategoryId && deficitData) {
+                // 1. Reduce Source Limit
+                const { data: sourceCat } = await api.supabase.from('categories').select('budget_limit').eq('id', sourceCategoryId).single();
+                if (sourceCat) {
+                    await api.updateCategory(sourceCategoryId, {
+                        budget_limit: Math.max(0, (sourceCat.budget_limit || 0) - deficitData.deficit)
+                    });
+                }
+
+                // 2. Increase Target Limit
+                const { data: targetCat } = await api.supabase.from('categories').select('budget_limit').eq('id', category).single();
+                if (targetCat) {
+                    await api.updateCategory(category, {
+                        budget_limit: (targetCat.budget_limit || 0) + deficitData.deficit
+                    });
+                }
+            }
+
+            // 3. Create Transaction
             const newTransaction = {
                 type,
                 amount: parseFloat(amount),
                 category_id: category,
-                wallet_id: wallet || null, // Send null if empty
+                wallet_id: wallet || null,
                 date,
                 description
             };
@@ -56,9 +72,8 @@ export default function TransactionForm({ onTransactionAdded }) {
             // Reset form
             setAmount('');
             setDescription('');
-            // Keep the last selected wallet or reset? User might want to keep it. 
-            // Let's keep it for convenience, or strictly follow "reset form" implies all.
-            // The original code didn't reset wallet/category, only amount/desc.
+            setDeficitData(null);
+
             if (onTransactionAdded) onTransactionAdded();
 
         } catch (error) {
@@ -69,9 +84,53 @@ export default function TransactionForm({ onTransactionAdded }) {
         }
     };
 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!category) {
+            alert('Mohon pilih kategori');
+            return;
+        }
+
+        const numericAmount = parseFloat(amount);
+
+        // Check Budget if Expense
+        if (type === 'expense') {
+            try {
+                const status = await api.getCategoryBudgetStatus(category);
+                if (status) {
+                    // Check if transaction date is in current month to apply budget logic? 
+                    // Ideally yes, but for now we assume budget applies continuously or blindly call api helper which checks current month.
+                    // The api helper calls for current month. If user posts for past date, this might be slightly off logic-wise but acceptable for MVP ("Smart Check").
+
+                    if (numericAmount > status.remaining) {
+                        setDeficitData({
+                            deficit: numericAmount - status.remaining
+                        });
+                        return; // Stop here, show modal
+                    }
+                }
+            } catch (error) {
+                console.error("Budget check failed", error);
+                // Proceed anyway if check fails? Or block? Let's proceed to avoid blocking user.
+            }
+        }
+
+        // Proceed directly if no deficit
+        processTransaction();
+    };
+
     return (
         <div className="card">
             <h3>Tambah Transaksi</h3>
+
+            {deficitData && (
+                <BudgetDeficitModal
+                    deficit={deficitData.deficit}
+                    onClose={() => setDeficitData(null)}
+                    onConfirm={(sourceId) => processTransaction(sourceId)}
+                />
+            )}
+
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                     <button

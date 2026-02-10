@@ -145,5 +145,31 @@ export const api = {
             ...cat,
             spent: spentByCategory[cat.id] || 0
         }));
+    },
+
+    // Budget Helper
+    getCategoryBudgetStatus: async (categoryId) => {
+        const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+        // Get Category Limit
+        const { data: category } = await supabase.from('categories').select('budget_limit').eq('id', categoryId).single();
+        if (!category) return null;
+
+        // Get Spent this month
+        const { data: transactions } = await supabase
+            .from('transactions')
+            .select('amount')
+            .eq('category_id', categoryId)
+            .eq('type', 'expense')
+            .gte('date', startOfMonth);
+
+        const spent = transactions?.reduce((acc, t) => acc + t.amount, 0) || 0;
+        const remaining = (category.budget_limit || 0) - spent;
+
+        return {
+            limit: category.budget_limit || 0,
+            spent,
+            remaining
+        };
     }
 };
