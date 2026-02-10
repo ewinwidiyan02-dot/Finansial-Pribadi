@@ -13,17 +13,18 @@ export default function Dashboard() {
     });
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        async function loadData() {
-            try {
-                const dashboardData = await api.getDashboardData();
-                setData(dashboardData);
-            } catch (error) {
-                console.error('Failed to load dashboard data', error);
-            } finally {
-                setLoading(false);
-            }
+    async function loadData() {
+        try {
+            const dashboardData = await api.getDashboardData();
+            setData(dashboardData);
+        } catch (error) {
+            console.error('Failed to load dashboard data', error);
+        } finally {
+            setLoading(false);
         }
+    }
+
+    useEffect(() => {
         loadData();
     }, []);
 
