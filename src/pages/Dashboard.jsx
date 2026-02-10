@@ -80,7 +80,10 @@ export default function Dashboard() {
                     <DashboardChart data={data.chart} />
                 </div>
                 <div className="transactions-section">
-                    <RecentTransactions transactions={data.transactions} />
+                    <RecentTransactions
+                        transactions={data.transactions}
+                        onTransactionUpdated={loadData}
+                    />
                 </div>
             </div>
         </div>

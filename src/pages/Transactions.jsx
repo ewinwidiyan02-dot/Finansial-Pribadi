@@ -38,7 +38,12 @@ export default function Transactions() {
                     <TransactionForm onTransactionAdded={handleTransactionAdded} />
                 </div>
                 <div style={{ order: 2 }}>
-                    {loading ? <p>Loading...</p> : <RecentTransactions transactions={transactions} />}
+                    {loading ? <p>Loading...</p> : (
+                        <RecentTransactions
+                            transactions={transactions}
+                            onTransactionUpdated={fetchTransactions}
+                        />
+                    )}
                 </div>
             </div>
         </div>

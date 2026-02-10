@@ -208,5 +208,63 @@ export const api = {
         // 4. Update Target
         const newTargetLimit = (targetCat.budget_limit || 0) + amount;
         await supabase.from('categories').update({ budget_limit: newTargetLimit }).eq('id', targetId);
+    },
+
+    updateTransaction: async (id, oldTx, newTx) => {
+        // 1. Revert Old Transaction Effects
+        if (oldTx.type === 'expense') {
+            // Restore Wallet Balance
+            if (oldTx.wallet_id) {
+                const { data: wallet } = await supabase.from('wallets').select('balance').eq('id', oldTx.wallet_id).single();
+                if (wallet) {
+                    await supabase.from('wallets').update({ balance: wallet.balance + oldTx.amount }).eq('id', oldTx.wallet_id);
+                }
+            }
+            // Restore Category Budget
+            if (oldTx.category_id) {
+                const { data: cat } = await supabase.from('categories').select('budget_limit').eq('id', oldTx.category_id).single();
+                if (cat) {
+                    await supabase.from('categories').update({ budget_limit: (cat.budget_limit || 0) + oldTx.amount }).eq('id', oldTx.category_id);
+                }
+            }
+        } else if (oldTx.type === 'income') {
+            // Restore Wallet Balance (Deduct income)
+            if (oldTx.wallet_id) {
+                const { data: wallet } = await supabase.from('wallets').select('balance').eq('id', oldTx.wallet_id).single();
+                if (wallet) {
+                    await supabase.from('wallets').update({ balance: wallet.balance - oldTx.amount }).eq('id', oldTx.wallet_id);
+                }
+            }
+        }
+
+        // 2. Update Transaction Record
+        const { error } = await supabase.from('transactions').update(newTx).eq('id', id);
+        if (error) throw error;
+
+        // 3. Apply New Transaction Effects
+        if (newTx.type === 'expense') {
+            // Deduct Wallet Balance
+            if (newTx.wallet_id) {
+                const { data: wallet } = await supabase.from('wallets').select('balance').eq('id', newTx.wallet_id).single();
+                if (wallet) {
+                    await supabase.from('wallets').update({ balance: wallet.balance - newTx.amount }).eq('id', newTx.wallet_id);
+                }
+            }
+            // Deduct Category Budget
+            if (newTx.category_id) {
+                const { data: cat } = await supabase.from('categories').select('budget_limit').eq('id', newTx.category_id).single();
+                if (cat) {
+                    await supabase.from('categories').update({ budget_limit: (cat.budget_limit || 0) - newTx.amount }).eq('id', newTx.category_id);
+                }
+            }
+        } else if (newTx.type === 'income') {
+            // Add Wallet Balance
+            if (newTx.wallet_id) {
+                const { data: wallet } = await supabase.from('wallets').select('balance').eq('id', newTx.wallet_id).single();
+                if (wallet) {
+                    await supabase.from('wallets').update({ balance: wallet.balance + newTx.amount }).eq('id', newTx.wallet_id);
+                }
+            }
+        }
     }
 };
