@@ -25,7 +25,7 @@ export default function RecentTransactions({ transactions, onTransactionUpdated 
                 <div className="transaction-list">
                     {transactions.map((t) => (
                         <div key={t.id} className="transaction-item">
-                            <div className={`transaction-icon ${t.type}`}>
+                            <div className={`transaction-icon ${!t.wallet ? 'budget_out' : t.type}`}>
                                 {t.type === 'income' ? <MdArrowUpward /> : <MdArrowDownward />}
                             </div>
                             <div className="transaction-details">
@@ -35,7 +35,7 @@ export default function RecentTransactions({ transactions, onTransactionUpdated 
                                 </span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <span className={`transaction-amount ${t.type}`}>
+                                <span className={`transaction-amount ${!t.wallet ? 'budget_out' : t.type}`}>
                                     {t.type === 'income' ? '+' : '-'}
                                     {new Intl.NumberFormat('id-ID', {
                                         style: 'currency',

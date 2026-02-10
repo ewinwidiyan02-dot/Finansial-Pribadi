@@ -117,9 +117,6 @@ export const api = {
         const chartData = Array.from({ length: daysInMonth }, (_, i) => {
             const day = i + 1;
             const dateStr = new Date(new Date().getFullYear(), new Date().getMonth(), day).toISOString().split('T')[0]; // YYYY-MM-DD (local logic approx)
-            // Note: simple string matching might have timezone issues if not careful, 
-            // but for a local app relying on 'date' column as string YYYY-MM-DD it's fine.
-            // Let's use the date string directly from DB which is YYYY-MM-DD
             return { name: day.toString(), amount: 0, fullDate: dateStr };
         });
 
@@ -151,36 +148,19 @@ export const api = {
         const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
         const { data: transactions } = await supabase
             .from('transactions')
-            .select('amount, category_id, type')
-            .in('type', ['expense', 'budget_out']) // Include budget_out
+            .select('amount, category_id')
+            .eq('type', 'expense')
             .gte('date', startOfMonth);
 
         const spentByCategory = {};
-        const budgetOutByCategory = {};
-
         transactions?.forEach(t => {
-            if (t.type === 'expense') {
-                spentByCategory[t.category_id] = (spentByCategory[t.category_id] || 0) + t.amount;
-            } else if (t.type === 'budget_out') {
-                budgetOutByCategory[t.category_id] = (budgetOutByCategory[t.category_id] || 0) + t.amount;
-            }
+            spentByCategory[t.category_id] = (spentByCategory[t.category_id] || 0) + t.amount;
         });
 
-        return categories.map(cat => {
-            const expense = spentByCategory[cat.id] || 0;
-            const budgetOut = budgetOutByCategory[cat.id] || 0;
-
-            // Reconstruct 'original' limit for display: Current Limit + Budget Transferred Out
-            const displayLimit = (cat.budget_limit || 0) + budgetOut;
-            // Display Spent = Real Expenses + Budget Transferred Out
-            const displaySpent = expense + budgetOut;
-
-            return {
-                ...cat,
-                budget_limit: displayLimit, // Override specific for display
-                spent: displaySpent // Override specific for display
-            };
-        });
+        return categories.map(cat => ({
+            ...cat,
+            spent: spentByCategory[cat.id] || 0
+        }));
     },
 
     // Budget Helper
@@ -194,23 +174,17 @@ export const api = {
         // Get Spent this month
         const { data: transactions } = await supabase
             .from('transactions')
-            .select('amount, type')
+            .select('amount')
             .eq('category_id', categoryId)
-            .in('type', ['expense', 'budget_out'])
+            .eq('type', 'expense')
             .gte('date', startOfMonth);
 
-        // Separate expense and budget_out
-        const expense = transactions?.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0) || 0;
-        // Budget Out is only needed if we want to display spent including transfers. 
-        // For remaining calculation: Limit (DB) - Expense matches the reality. 
-        // (Limit is already reduced by transfer).
-
-        // However, if we want consistency with the Budget View:
-        const remaining = (category.budget_limit || 0) - expense;
+        const spent = transactions?.reduce((acc, t) => acc + t.amount, 0) || 0;
+        const remaining = (category.budget_limit || 0) - spent;
 
         return {
             limit: category.budget_limit || 0,
-            spent: expense,
+            spent,
             remaining
         };
     },
@@ -229,12 +203,12 @@ export const api = {
         const newSourceLimit = Math.max(0, (sourceCat.budget_limit || 0) - amount);
         await supabase.from('categories').update({ budget_limit: newSourceLimit }).eq('id', sourceId);
 
-        // 4. Record 'budget_out' transaction for Source
-        // This allows us to track that this amount was "used" (transferred out)
+        // 4. Record transaction for Source via 'expense' type
+        // This works because type 'expense' is allowed, and without wallet_id it won't affect balance.
         await supabase.from('transactions').insert({
             amount: amount,
             category_id: sourceId,
-            type: 'budget_out',
+            type: 'expense',
             date: new Date().toISOString().split('T')[0],
             description: 'Transfer Pagu Anggaran',
             wallet_id: null // Does not affect wallet balance
@@ -243,10 +217,6 @@ export const api = {
         // 5. Update Target Limit
         const newTargetLimit = (targetCat.budget_limit || 0) + amount;
         await supabase.from('categories').update({ budget_limit: newTargetLimit }).eq('id', targetId);
-
-        // Optionally record 'budget_in' for target? 
-        // For now, increasing limit is enough. If we want to show "Received 100k", we could.
-        // But user issue is about Source showing usage.
     },
 
     updateTransaction: async (id, oldTx, newTx) => {
