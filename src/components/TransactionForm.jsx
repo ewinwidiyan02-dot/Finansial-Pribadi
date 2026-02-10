@@ -40,21 +40,7 @@ export default function TransactionForm({ onTransactionAdded }) {
         try {
             // If source category is selected, handle deficit transfer first
             if (sourceCategoryId && deficitData) {
-                // 1. Reduce Source Limit
-                const { data: sourceCat } = await api.supabase.from('categories').select('budget_limit').eq('id', sourceCategoryId).single();
-                if (sourceCat) {
-                    await api.updateCategory(sourceCategoryId, {
-                        budget_limit: Math.max(0, (sourceCat.budget_limit || 0) - deficitData.deficit)
-                    });
-                }
-
-                // 2. Increase Target Limit
-                const { data: targetCat } = await api.supabase.from('categories').select('budget_limit').eq('id', category).single();
-                if (targetCat) {
-                    await api.updateCategory(category, {
-                        budget_limit: (targetCat.budget_limit || 0) + deficitData.deficit
-                    });
-                }
+                await api.transferBudgetLimit(sourceCategoryId, category, deficitData.deficit);
             }
 
             // 3. Create Transaction
