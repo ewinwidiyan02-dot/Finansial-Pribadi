@@ -226,7 +226,7 @@ export const api = {
     },
 
     updateTransaction: async (id, oldTx, newTx) => {
-        // 1. Revert Old Transaction Effects
+        // 1. Revert Old Transaction effects
         if (oldTx.type === 'expense') {
             // Restore Wallet Balance
             if (oldTx.wallet_id) {
@@ -281,5 +281,24 @@ export const api = {
                 }
             }
         }
+    },
+
+    // Fuel Logs
+    getFuelLogs: async () => {
+        const { data, error } = await supabase.from('fuel_logs').select('*').order('date', { ascending: false });
+        if (error) throw error;
+        return data;
+    },
+
+    createFuelLog: async (log) => {
+        const { data, error } = await supabase.from('fuel_logs').insert(log).select();
+        if (error) throw error;
+        return data[0];
+    },
+
+    deleteFuelLog: async (id) => {
+        const { error } = await supabase.from('fuel_logs').delete().eq('id', id);
+        if (error) throw error;
+        return true;
     }
 };

@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { MdDashboard, MdReceipt, MdPieChart, MdShowChart, MdAccountBalanceWallet } from 'react-icons/md';
+import { MdDashboard, MdReceipt, MdPieChart, MdShowChart, MdAccountBalanceWallet, MdLocalGasStation } from 'react-icons/md';
 import './Layout.css';
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
     { path: '/budget', label: 'Pagu', icon: <MdPieChart /> },
     { path: '/trends', label: 'Tren', icon: <MdShowChart /> },
     { path: '/wallet', label: 'Dompet', icon: <MdAccountBalanceWallet /> },
+    { path: '/fuel', label: 'Konsumsi BBM', icon: <MdLocalGasStation /> },
 ];
 
 export default function Layout() {
