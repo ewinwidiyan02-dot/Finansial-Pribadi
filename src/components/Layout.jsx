@@ -75,6 +75,7 @@ export default function Layout() {
                         <div className="user-profile">
                             <div className="avatar">A</div>
                         </div>
+                    </div>
                 </header>
                 <div className="content-scroll">
                     <Outlet />
