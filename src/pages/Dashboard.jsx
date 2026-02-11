@@ -20,20 +20,23 @@ export default function Dashboard() {
             const dashboardData = await api.getDashboardData();
             setData(dashboardData);
 
-            const logs = await api.getFuelLogs();
             if (logs) {
                 const vehicleStats = {};
                 logs.forEach(log => {
                     if (log.distance) {
                         if (!vehicleStats[log.vehicle_type]) {
-                            vehicleStats[log.vehicle_type] = 0;
+                            vehicleStats[log.vehicle_type] = { distance: 0, fuelTypes: new Set() };
                         }
-                        vehicleStats[log.vehicle_type] += log.distance;
+                        vehicleStats[log.vehicle_type].distance += log.distance;
+                        if (log.fuel_type) {
+                            vehicleStats[log.vehicle_type].fuelTypes.add(log.fuel_type);
+                        }
                     }
                 });
                 const chartData = Object.keys(vehicleStats).map(key => ({
                     name: key,
-                    distance: vehicleStats[key]
+                    distance: vehicleStats[key].distance,
+                    fuelType: Array.from(vehicleStats[key].fuelTypes).join(', ')
                 }));
                 setFuelData(chartData);
             }
@@ -132,7 +135,17 @@ export default function Dashboard() {
                                                 backgroundColor: 'var(--card-bg)',
                                                 color: 'var(--text-primary)'
                                             }}
-                                            formatter={(value) => [`${value} km`, 'Jarak Tempuh']}
+                                            formatter={(value, name, props) => [
+                                                <div key="val" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ fontWeight: 600 }}>{value} km</span>
+                                                    {props.payload.fuelType && (
+                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                                                            {props.payload.fuelType}
+                                                        </span>
+                                                    )}
+                                                </div>,
+                                                ''
+                                            ]}
                                         />
                                         <Bar dataKey="distance" fill="var(--primary-color)" radius={[0, 4, 4, 0]} barSize={20} />
                                     </BarChart>
