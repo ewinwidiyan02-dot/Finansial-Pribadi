@@ -20,6 +20,7 @@ export default function Dashboard() {
             const dashboardData = await api.getDashboardData();
             setData(dashboardData);
 
+            const logs = await api.getFuelLogs();
             if (logs) {
                 const vehicleStats = {};
                 logs.forEach(log => {
