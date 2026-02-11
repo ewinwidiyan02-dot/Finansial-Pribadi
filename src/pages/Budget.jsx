@@ -144,7 +144,13 @@ export default function Budget() {
                 <p style={{ opacity: 0.8 }}>Sisa dari total {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalBudget)}</p>
 
                 <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '9999px', marginTop: '1rem', overflow: 'hidden' }}>
-                    <div style={{ width: `${Math.min(percentage, 100)}%`, height: '100%', backgroundColor: '#10B981', borderRadius: '9999px' }} />
+                    <div style={{
+                        width: `${Math.min(percentage, 100)}%`,
+                        height: '100%',
+                        backgroundColor: percentage >= 100 ? '#EF4444' : percentage >= 80 ? '#F59E0B' : '#10B981',
+                        borderRadius: '9999px',
+                        transition: 'width 0.5s ease-in-out, background-color 0.5s ease'
+                    }} />
                 </div>
             </div>
 

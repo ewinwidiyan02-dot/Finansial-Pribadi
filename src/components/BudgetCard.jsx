@@ -41,9 +41,9 @@ export default function BudgetCard({ category, spent, limit, icon }) {
                     style={{
                         width: `${percentage}%`,
                         height: '100%',
-                        backgroundColor: isOverBudget ? '#EF4444' : '#3B82F6',
+                        backgroundColor: percentage >= 100 ? '#EF4444' : percentage >= 80 ? '#F59E0B' : '#10B981',
                         borderRadius: '9999px',
-                        transition: 'width 0.5s ease-in-out'
+                        transition: 'width 0.5s ease-in-out, background-color 0.5s ease'
                     }}
                 />
             </div>
