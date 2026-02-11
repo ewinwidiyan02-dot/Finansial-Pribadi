@@ -26,13 +26,13 @@ export default function BudgetCard({ category, spent, limit, icon }) {
                 </div>
                 <div style={{ flex: 1 }}>
                     <h4 style={{ fontSize: '1rem', fontWeight: 600 }}>{category}</h4>
-                    <span style={{ fontSize: '0.875rem', color: '#64748B' }}>
-                        Sisa: <span style={{ color: remaining < 0 ? '#EF4444' : '#10B981', fontWeight: 600 }}>{formatCurrency(remaining)}</span>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                        Sisa: <span style={{ color: remaining < 0 ? 'var(--danger-color)' : 'var(--success-color)', fontWeight: 600 }}>{formatCurrency(remaining)}</span>
                     </span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(spent)}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748B' }}>dari {formatCurrency(limit)}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>dari {formatCurrency(limit)}</div>
                 </div>
             </div>
 

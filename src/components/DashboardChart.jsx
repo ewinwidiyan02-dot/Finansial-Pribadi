@@ -17,13 +17,13 @@ export default function DashboardChart({ data }) {
         if (active && payload && payload.length) {
             return (
                 <div className="custom-tooltip" style={{
-                    backgroundColor: 'white',
+                    backgroundColor: 'var(--card-bg)',
                     padding: '10px',
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    boxShadow: 'var(--shadow-md)'
                 }}>
-                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748B' }}>Tanggal {label}</p>
+                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Tanggal {label}</p>
                     <p style={{ margin: '4px 0 0', fontWeight: 'bold', color: '#EF4444' }}>
                         {formatCurrency(payload[0].value)}
                     </p>
@@ -42,18 +42,18 @@ export default function DashboardChart({ data }) {
                         data={data}
                         margin={{ top: 10, right: 20, left: 10, bottom: 0 }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
                         <XAxis
                             dataKey="name"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#94A3B8', fontSize: 12 }}
+                            tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
                             interval="preserveStartEnd"
                         />
                         <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#94A3B8', fontSize: 12 }}
+                            tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
                             tickFormatter={(value) => `${value / 1000}k`}
                         />
                         <Tooltip content={<CustomTooltip />} />
