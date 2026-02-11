@@ -44,21 +44,28 @@ export default function FuelConsumption() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (Number(formData.final_km) <= Number(formData.initial_km)) {
+        // Validation only if final_km is filled
+        if (formData.final_km && Number(formData.final_km) <= Number(formData.initial_km)) {
             alert('KM Akhir harus lebih besar dari KM Awal');
             return;
         }
 
         try {
             setSubmitting(true);
-            await api.createFuelLog({
+            const payload = {
                 vehicle_type: formData.vehicle_type,
                 fuel_type: formData.fuel_type,
                 initial_km: Number(formData.initial_km),
-                final_km: Number(formData.final_km),
                 price_per_liter: Number(formData.price_per_liter),
                 liters: Number(formData.liters)
-            });
+            };
+
+            // Only add final_km if it has a value
+            if (formData.final_km) {
+                payload.final_km = Number(formData.final_km);
+            }
+
+            await api.createFuelLog(payload);
 
             // Reset form
             setFormData({
@@ -164,14 +171,13 @@ export default function FuelConsumption() {
                                 />
                             </div>
                             <div>
-                                <label className="form-label">KM Akhir</label>
+                                <label className="form-label">KM Akhir <span style={{ fontSize: '0.8em', color: 'var(--text-secondary)', fontWeight: 400 }}>(Opsional)</span></label>
                                 <input
                                     type="number"
                                     name="final_km"
                                     value={formData.final_km}
                                     onChange={handleChange}
                                     className="form-input"
-                                    required
                                     min="0"
                                 />
                             </div>
@@ -307,11 +313,13 @@ export default function FuelConsumption() {
                                     }}>
                                         <div>
                                             <span>Jarak: </span>
-                                            <strong style={{ color: 'var(--text-primary)' }}>{log.distance} km</strong>
+                                            <strong style={{ color: 'var(--text-primary)' }}>{log.distance != null ? `${log.distance} km` : '-'}</strong>
                                         </div>
                                         <div style={{ textAlign: 'right' }}>
                                             <span>Konsumsi: </span>
-                                            <strong style={{ color: 'var(--text-primary)' }}>{(log.distance / log.liters).toFixed(1)} km/l</strong>
+                                            <strong style={{ color: 'var(--text-primary)' }}>
+                                                {log.distance != null ? `${(log.distance / log.liters).toFixed(1)} km/l` : '-'}
+                                            </strong>
                                         </div>
                                     </div>
 
