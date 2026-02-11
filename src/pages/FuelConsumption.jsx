@@ -16,6 +16,7 @@ export default function FuelConsumption() {
         price_per_liter: '',
         liters: ''
     });
+    const [editingId, setEditingId] = useState(null);
 
     const fetchLogs = async () => {
         try {
@@ -63,9 +64,15 @@ export default function FuelConsumption() {
             // Only add final_km if it has a value
             if (formData.final_km) {
                 payload.final_km = Number(formData.final_km);
+            } else {
+                payload.final_km = null; // Explicitly set to null if empty string
             }
 
-            await api.createFuelLog(payload);
+            if (editingId) {
+                await api.updateFuelLog(editingId, payload);
+            } else {
+                await api.createFuelLog(payload);
+            }
 
             // Reset form
             setFormData({
@@ -76,6 +83,7 @@ export default function FuelConsumption() {
                 price_per_liter: '',
                 liters: ''
             });
+            setEditingId(null);
 
             fetchLogs();
         } catch (error) {
@@ -84,6 +92,31 @@ export default function FuelConsumption() {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleEdit = (log) => {
+        setEditingId(log.id);
+        setFormData({
+            vehicle_type: log.vehicle_type,
+            fuel_type: log.fuel_type,
+            initial_km: log.initial_km,
+            final_km: log.final_km || '',
+            price_per_liter: log.price_per_liter,
+            liters: log.liters
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setFormData({
+            vehicle_type: '',
+            fuel_type: 'Pertalite',
+            initial_km: '',
+            final_km: '',
+            price_per_liter: '',
+            liters: ''
+        });
     };
 
     const handleDelete = async (id) => {
@@ -125,7 +158,7 @@ export default function FuelConsumption() {
                 <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
                         <MdLocalGasStation style={{ color: 'var(--primary-color)', fontSize: '1.25rem' }} />
-                        <h4 style={{ fontWeight: 600 }}>Input Data Baru</h4>
+                        <h4 style={{ fontWeight: 600 }}>{editingId ? 'Edit Data' : 'Input Data Baru'}</h4>
                     </div>
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -247,14 +280,27 @@ export default function FuelConsumption() {
                             )}
                         </div>
 
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={submitting}
-                            style={{ marginTop: '1rem' }}
-                        >
-                            {submitting ? 'Menyimpan...' : 'Simpan Data'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button
+                                type="submit"
+                                className="btn btn-primary"
+                                disabled={submitting}
+                                style={{ marginTop: '1rem', flex: 1 }}
+                            >
+                                {submitting ? 'Menyimpan...' : (editingId ? 'Update Data' : 'Simpan Data')}
+                            </button>
+
+                            {editingId && (
+                                <button
+                                    type="button"
+                                    onClick={handleCancelEdit}
+                                    className="btn"
+                                    style={{ marginTop: '1rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                                >
+                                    Batal
+                                </button>
+                            )}
+                        </div>
                     </form>
                 </div>
 
@@ -297,6 +343,20 @@ export default function FuelConsumption() {
                                             </div>
                                             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                                                 {new Date(log.date).toLocaleDateString('id-ID')}
+                                                <button
+                                                    onClick={() => handleEdit(log)}
+                                                    style={{
+                                                        marginLeft: '8px',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: 'var(--primary-color)',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.85rem',
+                                                        textDecoration: 'underline'
+                                                    }}
+                                                >
+                                                    Edit
+                                                </button>
                                             </div>
                                         </div>
                                     </div>

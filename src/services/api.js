@@ -296,6 +296,12 @@ export const api = {
         return data[0];
     },
 
+    updateFuelLog: async (id, updates) => {
+        const { data, error } = await supabase.from('fuel_logs').update(updates).eq('id', id).select();
+        if (error) throw error;
+        return data[0];
+    },
+
     deleteFuelLog: async (id) => {
         const { error } = await supabase.from('fuel_logs').delete().eq('id', id);
         if (error) throw error;
