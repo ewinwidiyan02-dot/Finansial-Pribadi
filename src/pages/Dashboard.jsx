@@ -24,11 +24,13 @@ export default function Dashboard() {
             if (logs) {
                 const vehicleStats = {};
                 logs.forEach(log => {
-                    if (log.distance) {
+                    const dist = log.distance ?? (log.final_km && log.initial_km ? log.final_km - log.initial_km : 0);
+
+                    if (dist > 0) {
                         if (!vehicleStats[log.vehicle_type]) {
                             vehicleStats[log.vehicle_type] = { distance: 0, fuelTypes: new Set() };
                         }
-                        vehicleStats[log.vehicle_type].distance += log.distance;
+                        vehicleStats[log.vehicle_type].distance += dist;
                         if (log.fuel_type) {
                             vehicleStats[log.vehicle_type].fuelTypes.add(log.fuel_type);
                         }
