@@ -44,8 +44,8 @@ export const api = {
     },
 
     // Transactions
-    getTransactions: async () => {
-        const { data, error } = await supabase
+    getTransactions: async (month, year) => {
+        let query = supabase
             .from('transactions')
             .select(`
         *,
@@ -53,6 +53,14 @@ export const api = {
         wallet:wallets(name, icon)
       `)
             .order('date', { ascending: false });
+
+        if (month !== undefined && year !== undefined) {
+            const startDate = new Date(year, month, 1).toLocaleDateString('en-CA');
+            const endDate = new Date(year, month + 1, 0).toLocaleDateString('en-CA');
+            query = query.gte('date', startDate).lte('date', endDate);
+        }
+
+        const { data, error } = await query;
         if (error) throw error;
         return data;
     },
@@ -77,7 +85,7 @@ export const api = {
     },
 
     // Dashboard Aggregations
-    getDashboardData: async () => {
+    getDashboardData: async (month, year) => {
         // 1. Get Wallets for Total Balance & Investment
         const { data: wallets } = await supabase.from('wallets').select('balance, type');
 
@@ -87,13 +95,20 @@ export const api = {
         // Total Investasi: Only investment
         const investmentBalance = wallets?.filter(w => w.type === 'investment').reduce((acc, curr) => acc + curr.balance, 0) || 0;
 
-        // 2. Get This Month's Transactions for Income/Expense
+        // 2. Get Transactions for Selected Month
+        // Default to current month if not provided
         const date = new Date();
-        const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toLocaleDateString('en-CA'); // YYYY-MM-DD Local
+        const targetMonth = month !== undefined ? month : date.getMonth();
+        const targetYear = year !== undefined ? year : date.getFullYear();
+
+        const startDate = new Date(targetYear, targetMonth, 1).toLocaleDateString('en-CA');
+        const endDate = new Date(targetYear, targetMonth + 1, 0).toLocaleDateString('en-CA');
+
         const { data: currentMonthTrans } = await supabase
             .from('transactions')
             .select('amount, type, date')
-            .gte('date', startOfMonth);
+            .gte('date', startDate)
+            .lte('date', endDate);
 
         const income = currentMonthTrans
             ?.filter(t => t.type === 'income')
@@ -106,18 +121,21 @@ export const api = {
         const { data: categories } = await supabase.from('categories').select('budget_limit, type');
         const totalBudgetLimit = categories?.filter(c => c.type === 'expense').reduce((acc, curr) => acc + (curr.budget_limit || 0), 0) || 0;
 
-        // 4. Get Recent Transactions
+        // 4. Get Recent Transactions (Filtered by month if needed, but usually recent is just recent regardless of month filter? 
+        // User asked: "mulai dari transaksi, pagu, dan dashboard." implying list should also filter.)
         const { data: recent } = await supabase
             .from('transactions')
             .select(`*, category:categories(id, name, type), wallet:wallets(id, name)`)
+            .gte('date', startDate)
+            .lte('date', endDate)
             .order('date', { ascending: false })
             .limit(5);
 
         // 5. Generate Chart Data (Daily Expense Trend)
-        const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
         const chartData = Array.from({ length: daysInMonth }, (_, i) => {
             const day = i + 1;
-            const dateStr = new Date(new Date().getFullYear(), new Date().getMonth(), day).toISOString().split('T')[0]; // YYYY-MM-DD (local logic approx)
+            const dateStr = new Date(targetYear, targetMonth, day).toISOString().split('T')[0];
             return { name: day.toString(), amount: 0, fullDate: dateStr };
         });
 
@@ -142,17 +160,23 @@ export const api = {
     },
 
     // Budget Data
-    getBudgetData: async () => {
+    getBudgetData: async (month, year) => {
         const { data: categories } = await supabase.from('categories').select('*');
 
-        // Calculate spent per category for this month
+        // Calculate spent per category for selected month
         const date = new Date();
-        const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toLocaleDateString('en-CA'); // YYYY-MM-DD Local
+        const targetMonth = month !== undefined ? month : date.getMonth();
+        const targetYear = year !== undefined ? year : date.getFullYear();
+
+        const startDate = new Date(targetYear, targetMonth, 1).toLocaleDateString('en-CA');
+        const endDate = new Date(targetYear, targetMonth + 1, 0).toLocaleDateString('en-CA');
+
         const { data: transactions } = await supabase
             .from('transactions')
             .select('amount, category_id')
             .eq('type', 'expense')
-            .gte('date', startOfMonth);
+            .gte('date', startDate)
+            .lte('date', endDate);
 
         const spentByCategory = {};
         transactions?.forEach(t => {
@@ -284,8 +308,16 @@ export const api = {
     },
 
     // Fuel Logs
-    getFuelLogs: async () => {
-        const { data, error } = await supabase.from('fuel_logs').select('*').order('date', { ascending: false });
+    getFuelLogs: async (month, year) => {
+        let query = supabase.from('fuel_logs').select('*').order('date', { ascending: false });
+
+        if (month !== undefined && year !== undefined) {
+            const startDate = new Date(year, month, 1).toLocaleDateString('en-CA');
+            const endDate = new Date(year, month + 1, 0).toLocaleDateString('en-CA');
+            query = query.gte('date', startDate).lte('date', endDate);
+        }
+
+        const { data, error } = await query;
         if (error) throw error;
         return data;
     },

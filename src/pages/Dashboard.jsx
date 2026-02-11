@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { MdAccountBalanceWallet, MdArrowUpward, MdArrowDownward, MdPieChart, MdTrendingUp, MdLocalGasStation } from 'react-icons/md';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import StatCard from '../components/StatCard';
@@ -7,6 +8,7 @@ import RecentTransactions from '../components/RecentTransactions';
 import { api } from '../services/api';
 
 export default function Dashboard() {
+    const { selectedDate } = useOutletContext();
     const [data, setData] = useState({
         summary: { balance: 0, income: 0, expense: 0, investment: 0, budgetLimit: 0 },
         transactions: [],
@@ -17,10 +19,13 @@ export default function Dashboard() {
 
     async function loadData() {
         try {
-            const dashboardData = await api.getDashboardData();
+            const month = selectedDate.getMonth();
+            const year = selectedDate.getFullYear();
+
+            const dashboardData = await api.getDashboardData(month, year);
             setData(dashboardData);
 
-            const logs = await api.getFuelLogs();
+            const logs = await api.getFuelLogs(month, year);
             if (logs) {
                 const vehicleStats = {};
                 logs.forEach(log => {
@@ -52,7 +57,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [selectedDate]);
 
     const remainingBudget = Math.max(0, data.summary.budgetLimit - data.summary.expense);
 

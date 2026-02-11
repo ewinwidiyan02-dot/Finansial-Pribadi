@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import TransactionForm from '../components/TransactionForm';
 import RecentTransactions from '../components/RecentTransactions';
 import { api } from '../services/api';
 
 export default function Transactions() {
+    const { selectedDate } = useOutletContext();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchTransactions = async () => {
         try {
             setLoading(true);
-            const data = await api.getTransactions();
+            const month = selectedDate.getMonth();
+            const year = selectedDate.getFullYear();
+            const data = await api.getTransactions(month, year);
             setTransactions(data || []);
         } catch (error) {
             console.error('Failed to fetch transactions', error);
@@ -21,7 +25,7 @@ export default function Transactions() {
 
     useEffect(() => {
         fetchTransactions();
-    }, []);
+    }, [selectedDate]);
 
     const handleTransactionAdded = () => {
         fetchTransactions();

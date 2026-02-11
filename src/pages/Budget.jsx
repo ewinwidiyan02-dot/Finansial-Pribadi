@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { MdRestaurant, MdDirectionsCar, MdShoppingCart, MdReceipt, MdMovie, MdLocalHospital, MdAttachMoney, MdAdd, MdEdit, MdDelete, MdCompareArrows } from 'react-icons/md';
 import BudgetCard from '../components/BudgetCard';
 import CategoryForm from '../components/CategoryForm';
@@ -16,6 +17,7 @@ const ICON_MAP = {
 };
 
 export default function Budget() {
+    const { selectedDate } = useOutletContext();
     const [budgets, setBudgets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -25,7 +27,9 @@ export default function Budget() {
     async function fetchBudgets() {
         try {
             setLoading(true);
-            const data = await api.getBudgetData();
+            const month = selectedDate.getMonth();
+            const year = selectedDate.getFullYear();
+            const data = await api.getBudgetData(month, year);
             // Show all categories. User might have budget limits on 'income' types too (e.g. Savings).
             setBudgets(data || []);
         } catch (error) {
@@ -37,7 +41,7 @@ export default function Budget() {
 
     useEffect(() => {
         fetchBudgets();
-    }, []);
+    }, [selectedDate]);
 
     const handleEdit = (category) => {
         setEditingCategory(category);

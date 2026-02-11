@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { api } from '../services/api';
 import { MdLocalGasStation, MdTimeline, MdDelete } from 'react-icons/md';
 
 const FUEL_TYPES = ['Pertalite', 'Pertamax', 'Pertamax Turbo', 'Solar', 'Dexlite'];
 
 export default function FuelConsumption() {
+    const { selectedDate } = useOutletContext();
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -21,7 +23,9 @@ export default function FuelConsumption() {
     const fetchLogs = async () => {
         try {
             setLoading(true);
-            const data = await api.getFuelLogs();
+            const month = selectedDate.getMonth();
+            const year = selectedDate.getFullYear();
+            const data = await api.getFuelLogs(month, year);
             setLogs(data || []);
         } catch (error) {
             console.error('Failed to fetch fuel logs', error);
@@ -32,7 +36,7 @@ export default function FuelConsumption() {
 
     useEffect(() => {
         fetchLogs();
-    }, []);
+    }, [selectedDate]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
