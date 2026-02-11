@@ -62,33 +62,38 @@ export default function Budget() {
         fetchBudgets();
     };
 
-    const handleTransfer = async ({ type, amount, walletId, useWallet }) => {
+    const handleTransfer = async ({ type, amount, walletId, useWallet, targetCategoryId }) => {
         if (!transferCategory) return;
 
         try {
-            // 1. Create Transaction (if needed)
-            if (walletId) {
-                const transaction = {
-                    type: type === 'save' ? 'income' : 'expense',
-                    amount: amount,
-                    category_id: transferCategory.id,
-                    wallet_id: walletId,
-                    date: new Date().toISOString().split('T')[0],
-                    description: type === 'save' ? 'Sisa Anggaran' : 'Tambah Pagu Anggaran'
-                };
+            if (type === 'transfer') {
+                // Handle Category-to-Category Transfer
+                await api.transferBudgetLimit(transferCategory.id, targetCategoryId, amount);
+            } else {
+                // 1. Create Transaction (if needed)
+                if (walletId) {
+                    const transaction = {
+                        type: type === 'save' ? 'income' : 'expense',
+                        amount: amount,
+                        category_id: transferCategory.id,
+                        wallet_id: walletId,
+                        date: new Date().toISOString().split('T')[0],
+                        description: type === 'save' ? 'Sisa Anggaran' : 'Tambah Pagu Anggaran'
+                    };
 
-                // Only create transaction if it's 'save' (always to wallet) or 'topup' WITH wallet usage
-                if (type === 'save' || (type === 'topup' && useWallet)) {
-                    await api.createTransaction(transaction);
+                    // Only create transaction if it's 'save' (always to wallet) or 'topup' WITH wallet usage
+                    if (type === 'save' || (type === 'topup' && useWallet)) {
+                        await api.createTransaction(transaction);
+                    }
                 }
+
+                // 2. Update Budget Limit (for save/topup)
+                const newLimit = type === 'save'
+                    ? (transferCategory.budget_limit || 0) - amount
+                    : (transferCategory.budget_limit || 0) + amount;
+
+                await api.updateCategory(transferCategory.id, { budget_limit: newLimit });
             }
-
-            // 2. Update Budget Limit
-            const newLimit = type === 'save'
-                ? (transferCategory.budget_limit || 0) - amount
-                : (transferCategory.budget_limit || 0) + amount;
-
-            await api.updateCategory(transferCategory.id, { budget_limit: newLimit });
 
             setTransferCategory(null);
             fetchBudgets();
@@ -128,6 +133,7 @@ export default function Budget() {
             {transferCategory && (
                 <TransferModal
                     category={transferCategory}
+                    categories={budgets}
                     onClose={() => setTransferCategory(null)}
                     onTransfer={handleTransfer}
                 />

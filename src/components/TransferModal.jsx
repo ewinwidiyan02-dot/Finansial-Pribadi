@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 
-export default function TransferModal({ category, onClose, onTransfer }) {
-    const [type, setType] = useState('save'); // 'save' (Simpan Sisa) or 'topup' (Tambah Pagu)
+export default function TransferModal({ category, categories = [], onClose, onTransfer }) {
+    const [type, setType] = useState('save'); // 'save', 'topup', or 'transfer'
     const [amount, setAmount] = useState('');
     const [wallet, setWallet] = useState('');
     const [wallets, setWallets] = useState([]);
+    const [targetCategoryId, setTargetCategoryId] = useState('');
     const [loading, setLoading] = useState(false);
     const [useWalletForTopUp, setUseWalletForTopUp] = useState(true);
 
@@ -41,13 +42,19 @@ export default function TransferModal({ category, onClose, onTransfer }) {
             return;
         }
 
+        if (type === 'transfer' && !targetCategoryId) {
+            alert('Mohon pilih kategori tujuan');
+            return;
+        }
+
         setLoading(true);
         try {
             await onTransfer({
                 type,
                 amount: parseFloat(amount),
                 walletId: wallet,
-                useWallet: type === 'topup' ? useWalletForTopUp : true
+                useWallet: type === 'topup' ? useWalletForTopUp : true,
+                targetCategoryId: type === 'transfer' ? targetCategoryId : null
             });
             onClose();
         } catch (error) {
@@ -70,14 +77,21 @@ export default function TransferModal({ category, onClose, onTransfer }) {
                     <button
                         className={`btn ${type === 'save' ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => setType('save')}
-                        style={{ flex: 1, justifyContent: 'center', backgroundColor: type === 'save' ? '#10B981' : '' }}
+                        style={{ flex: 1, justifyContent: 'center', backgroundColor: type === 'save' ? '#10B981' : '', fontSize: '0.8rem', padding: '0.5rem' }}
                     >
                         Simpan Sisa
                     </button>
                     <button
+                        className={`btn ${type === 'transfer' ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setType('transfer')}
+                        style={{ flex: 1, justifyContent: 'center', backgroundColor: type === 'transfer' ? '#F59E0B' : '', fontSize: '0.8rem', padding: '0.5rem' }}
+                    >
+                        Transfer
+                    </button>
+                    <button
                         className={`btn ${type === 'topup' ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => setType('topup')}
-                        style={{ flex: 1, justifyContent: 'center', backgroundColor: type === 'topup' ? '#3B82F6' : '' }}
+                        style={{ flex: 1, justifyContent: 'center', backgroundColor: type === 'topup' ? '#3B82F6' : '', fontSize: '0.8rem', padding: '0.5rem' }}
                     >
                         Tambah Pagu
                     </button>
@@ -86,7 +100,9 @@ export default function TransferModal({ category, onClose, onTransfer }) {
                 <p style={{ fontSize: '0.875rem', color: '#64748B', marginBottom: '1rem' }}>
                     {type === 'save'
                         ? `Pindahkan sisa anggaran (Maks: ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(remaining)}) ke dompet.`
-                        : 'Tambah batas anggaran kategori ini.'}
+                        : type === 'transfer'
+                            ? 'Pindahkan anggaran ke kategori lain.'
+                            : 'Tambah batas anggaran kategori ini.'}
                 </p>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -100,6 +116,26 @@ export default function TransferModal({ category, onClose, onTransfer }) {
                             required
                         />
                     </div>
+
+                    {type === 'transfer' && (
+                        <div>
+                            <label className="text-sm text-secondary">Pindah ke Kategori</label>
+                            <select
+                                value={targetCategoryId}
+                                onChange={(e) => setTargetCategoryId(e.target.value)}
+                                required
+                                className="form-select"
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}
+                            >
+                                <option value="">-- Pilih Kategori Tujuan --</option>
+                                {categories
+                                    .filter(c => c.id !== category.id && c.type === 'expense')
+                                    .map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                            </select>
+                        </div>
+                    )}
 
                     {(type === 'save' || (type === 'topup' && useWalletForTopUp)) && (
                         <div>
