@@ -59,7 +59,7 @@ export default function Dashboard() {
         loadData();
     }, [selectedDate]);
 
-    const remainingBudget = Math.max(0, data.summary.budgetLimit - data.summary.expense);
+    const remainingBudget = Math.max(0, data.summary.budgetLimit - (data.summary.budgetUsed ?? data.summary.expense));
 
     return (
         <div className="container" style={{ paddingTop: '1rem' }}>

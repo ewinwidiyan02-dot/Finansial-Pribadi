@@ -36,7 +36,7 @@ export default function EditTransactionModal({ transaction, onClose, onUpdate })
             const newTransaction = {
                 type,
                 amount: parseFloat(amount),
-                category_id: category,
+                category_id: category || null,
                 wallet_id: wallet || null,
                 date,
                 description
@@ -93,8 +93,8 @@ export default function EditTransactionModal({ transaction, onClose, onUpdate })
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
-                            <label className="text-sm text-secondary">Kategori</label>
-                            <select value={category} onChange={(e) => setCategory(e.target.value)} required>
+                            <label className="text-sm text-secondary">Kategori (Opsional)</label>
+                            <select value={category || ""} onChange={(e) => setCategory(e.target.value)}>
                                 <option value="">Pilih Kategori</option>
                                 {categories.filter(c => c.type === type).map(c => (
                                     <option key={c.id} value={c.id}>{c.name}</option>

@@ -106,7 +106,7 @@ export const api = {
 
         const { data: currentMonthTrans } = await supabase
             .from('transactions')
-            .select('amount, type, date')
+            .select('amount, type, date, category_id')
             .gte('date', startDate)
             .lte('date', endDate);
 
@@ -115,6 +115,10 @@ export const api = {
             .reduce((acc, t) => acc + t.amount, 0) || 0;
         const expense = currentMonthTrans
             ?.filter(t => t.type === 'expense' && t.wallet_id !== null) // Exclude budget transfers (no wallet) from real actual spending
+            .reduce((acc, t) => acc + t.amount, 0) || 0;
+
+        const budgetUsed = currentMonthTrans
+            ?.filter(t => t.type === 'expense' && t.category_id !== null)
             .reduce((acc, t) => acc + t.amount, 0) || 0;
 
         // 3. Get Budget Limits
@@ -152,7 +156,8 @@ export const api = {
                 income,
                 expense,
                 investment: investmentBalance,
-                budgetLimit: totalBudgetLimit
+                budgetLimit: totalBudgetLimit,
+                budgetUsed
             },
             transactions: recent || [],
             chart: chartData
