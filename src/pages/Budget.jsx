@@ -112,6 +112,32 @@ export default function Budget() {
     const totalRemaining = totalBudget - totalSpent;
     const percentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
+    // Sort Budgets: Red (>=100%) > Yellow (>=80%) > Green
+    const sortedBudgets = [...budgets].sort((a, b) => {
+        const getPercentage = (item) => {
+            const limit = item.budget_limit || 0;
+            if (limit === 0) return 0;
+            return (item.spent / limit) * 100;
+        };
+
+        const pctA = getPercentage(a);
+        const pctB = getPercentage(b);
+
+        const getPriority = (pct) => {
+            if (pct >= 100) return 1; // Red
+            if (pct >= 80) return 2;  // Yellow
+            return 3;                 // Green
+        };
+
+        const priorityA = getPriority(pctA);
+        const priorityB = getPriority(pctB);
+
+        if (priorityA !== priorityB) {
+            return priorityA - priorityB; // Lower priority number first (1 > 2 > 3)
+        }
+        return pctB - pctA; // Within same priority, higher percentage first
+    });
+
     return (
         <div className="container" style={{ paddingTop: '1rem', paddingBottom: '2rem' }}>
             <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -165,7 +191,7 @@ export default function Budget() {
             </div>
 
             <div style={{ display: 'grid', gap: '1rem' }}>
-                {loading ? <p>Loading budgets...</p> : budgets.map((b) => (
+                {loading ? <p>Loading budgets...</p> : sortedBudgets.map((b) => (
                     <div key={b.id} style={{ position: 'relative' }}>
                         <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10, display: 'flex', gap: '8px' }}>
                             <button onClick={() => setTransferCategory(b)} title="Transfer/Atur Sisa" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3B82F6' }}>
