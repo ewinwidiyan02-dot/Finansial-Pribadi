@@ -49,7 +49,7 @@ export default function WalletCard({ name, type, balance, icon, onTransfer }) {
                     {onTransfer && (
                         <div style={{ display: 'flex', gap: '4px' }}>
                             <button
-                                onClick={onTransfer}
+                                onClick={(e) => { e.stopPropagation(); onTransfer(false); }} // Pass false explicitly for "Send"
                                 title="Transfer ke Anggaran"
                                 style={{
                                     background: 'rgba(255,255,255,0.2)',

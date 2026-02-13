@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 
 export const api = {
+    supabase,
     // Wallets
     getWallets: async () => {
         const { data, error } = await supabase.from('wallets').select('*').order('id');
