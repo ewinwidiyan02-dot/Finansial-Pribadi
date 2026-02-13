@@ -8,6 +8,7 @@ export default function Transactions() {
     const { selectedDate } = useOutletContext();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const fetchTransactions = async () => {
         try {
@@ -31,10 +32,32 @@ export default function Transactions() {
         fetchTransactions();
     };
 
+    const filteredTransactions = transactions.filter((t) => {
+        const query = searchQuery.toLowerCase();
+        return (
+            (t.description || '').toLowerCase().includes(query) ||
+            (t.amount || 0).toString().includes(query) ||
+            (t.category?.name || '').toLowerCase().includes(query)
+        );
+    });
+
     return (
         <div className="container" style={{ paddingTop: '1rem', paddingBottom: '2rem' }}>
-            <header style={{ marginBottom: '1.5rem' }}>
+            <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 className="text-xl">Transaksi</h2>
+                <input
+                    type="text"
+                    placeholder="Cari transaksi..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.375rem',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '0.875rem',
+                        width: '200px'
+                    }}
+                />
             </header>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
@@ -44,7 +67,7 @@ export default function Transactions() {
                 <div style={{ order: 2 }}>
                     {loading ? <p>Loading...</p> : (
                         <RecentTransactions
-                            transactions={transactions}
+                            transactions={filteredTransactions}
                             onTransactionUpdated={fetchTransactions}
                         />
                     )}

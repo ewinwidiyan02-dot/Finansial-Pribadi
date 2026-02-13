@@ -255,6 +255,46 @@ export const api = {
         await supabase.from('categories').update({ budget_limit: newTargetLimit }).eq('id', targetId);
     },
 
+    // Transfer logic... (existing)
+
+    deleteTransaction: async (id) => {
+        // 1. Fetch the transaction to be deleted
+        const { data: tx, error: fetchError } = await supabase.from('transactions').select('*').eq('id', id).single();
+        if (fetchError) throw fetchError;
+        if (!tx) throw new Error('Transaction not found');
+
+        // 2. Revert effects (Refund/Deduct)
+        if (tx.type === 'expense') {
+            // Restore Wallet Balance (Refund)
+            if (tx.wallet_id) {
+                const { data: wallet } = await supabase.from('wallets').select('balance').eq('id', tx.wallet_id).single();
+                if (wallet) {
+                    await supabase.from('wallets').update({ balance: wallet.balance + tx.amount }).eq('id', tx.wallet_id);
+                }
+            }
+            // Restore Category Budget
+            if (tx.category_id) {
+                const { data: cat } = await supabase.from('categories').select('budget_limit').eq('id', tx.category_id).single();
+                if (cat) {
+                    await supabase.from('categories').update({ budget_limit: (cat.budget_limit || 0) + tx.amount }).eq('id', tx.category_id);
+                }
+            }
+        } else if (tx.type === 'income') {
+            // Deduct Wallet Balance (Remove Income)
+            if (tx.wallet_id) {
+                const { data: wallet } = await supabase.from('wallets').select('balance').eq('id', tx.wallet_id).single();
+                if (wallet) {
+                    await supabase.from('wallets').update({ balance: wallet.balance - tx.amount }).eq('id', tx.wallet_id);
+                }
+            }
+        }
+
+        // 3. Delete the Transaction
+        const { error } = await supabase.from('transactions').delete().eq('id', id);
+        if (error) throw error;
+        return true;
+    },
+
     updateTransaction: async (id, oldTx, newTx) => {
         // 1. Revert Old Transaction effects
         if (oldTx.type === 'expense') {
