@@ -31,24 +31,49 @@ export default function Wallet() {
         fetchWallets();
     };
 
-    const handleTransfer = async ({ walletId, categoryId, amount }) => {
+    const handleTransfer = async ({ walletId, categoryId, amount, isRequest }) => {
         try {
-            // 1. Create Expense Transaction
-            const transaction = {
-                type: 'expense',
-                amount: amount,
-                category_id: categoryId,
-                wallet_id: walletId,
-                date: new Date().toISOString().split('T')[0],
-                description: 'Transfer ke Anggaran (Pagu)'
-            };
-            await api.createTransaction(transaction);
+            if (isRequest) {
+                // CASE: Request Funds (Budget -> Wallet)
+                // 1. Create Income Transaction (Wallet receives money)
+                const transaction = {
+                    type: 'income',
+                    amount: amount,
+                    category_id: categoryId, // Optional: tag it to category for record? Or null? detailed requirement said "meminta dana tambahan dari pagu anggaran". 
+                    // If we tag it, it might count as negative expense? No, type is income.
+                    // Let's tag it so we know where it came from.
+                    wallet_id: walletId,
+                    date: new Date().toISOString().split('T')[0],
+                    description: 'Ambil dari Anggaran'
+                };
+                await api.createTransaction(transaction);
 
-            // 2. Increase Budget Limit
-            const { data: category } = await api.supabase.from('categories').select('budget_limit').eq('id', categoryId).single();
-            if (category) {
-                const newLimit = (category.budget_limit || 0) + amount;
-                await api.updateCategory(categoryId, { budget_limit: newLimit });
+                // 2. Decrease Budget Limit
+                const { data: category } = await api.supabase.from('categories').select('budget_limit').eq('id', categoryId).single();
+                if (category) {
+                    const newLimit = Math.max(0, (category.budget_limit || 0) - amount);
+                    await api.updateCategory(categoryId, { budget_limit: newLimit });
+                }
+
+            } else {
+                // CASE: Transfer to Budget (Wallet -> Budget)
+                // 1. Create Expense Transaction
+                const transaction = {
+                    type: 'expense',
+                    amount: amount,
+                    category_id: categoryId,
+                    wallet_id: walletId,
+                    date: new Date().toISOString().split('T')[0],
+                    description: 'Transfer ke Anggaran (Pagu)'
+                };
+                await api.createTransaction(transaction);
+
+                // 2. Increase Budget Limit
+                const { data: category } = await api.supabase.from('categories').select('budget_limit').eq('id', categoryId).single();
+                if (category) {
+                    const newLimit = (category.budget_limit || 0) + amount;
+                    await api.updateCategory(categoryId, { budget_limit: newLimit });
+                }
             }
 
             setTransferWallet(null);
@@ -122,7 +147,7 @@ export default function Wallet() {
                             name={w.name}
                             type={w.type}
                             balance={w.balance}
-                            onTransfer={() => setTransferWallet(w)}
+                            onTransfer={(isRequest = false) => setTransferWallet({ ...w, isRequest })}
                         />
                     ))}
                 </div>

@@ -6,6 +6,7 @@ export default function WalletTransferModal({ wallet, onClose, onTransfer }) {
     const [category, setCategory] = useState('');
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
+    const isRequest = wallet?.isRequest;
 
     useEffect(() => {
         async function loadCategories() {
@@ -27,13 +28,21 @@ export default function WalletTransferModal({ wallet, onClose, onTransfer }) {
             return;
         }
 
-        if (parseFloat(amount) > wallet.balance) {
+        if (!isRequest && parseFloat(amount) > wallet.balance) {
             alert('Saldo dompet tidak mencukupi');
             return;
         }
 
+        if (isRequest) {
+            const selectedCat = categories.find(c => c.id == category);
+            if (selectedCat && parseFloat(amount) > (selectedCat.budget_limit || 0)) {
+                alert('Pagu anggaran tidak mencukupi untuk diambil.');
+                return;
+            }
+        }
+
         if (!category) {
-            alert('Mohon pilih kategori tujuan');
+            alert(isRequest ? 'Mohon pilih kategori sumber' : 'Mohon pilih kategori tujuan');
             return;
         }
 
@@ -42,7 +51,8 @@ export default function WalletTransferModal({ wallet, onClose, onTransfer }) {
             await onTransfer({
                 walletId: wallet.id,
                 categoryId: category,
-                amount: parseFloat(amount)
+                amount: parseFloat(amount),
+                isRequest
             });
             onClose();
         } catch (error) {
@@ -59,15 +69,15 @@ export default function WalletTransferModal({ wallet, onClose, onTransfer }) {
             backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
         }}>
             <div className="card" style={{ width: '100%', maxWidth: '400px', maxHeight: '90vh', overflowY: 'auto' }}>
-                <h3>Transfer ke Anggaran</h3>
+                <h3>{isRequest ? 'Minta Dana dari Anggaran' : 'Transfer ke Anggaran'}</h3>
                 <p style={{ fontSize: '0.875rem', color: '#64748B', marginBottom: '1rem' }}>
-                    Dari: <strong>{wallet.name}</strong> <br />
+                    {isRequest ? 'Ke: ' : 'Dari: '} <strong>{wallet.name}</strong> <br />
                     Saldo: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(wallet.balance)}
                 </p>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
-                        <label className="text-sm text-secondary">Jumlah Transfer</label>
+                        <label className="text-sm text-secondary">Jumlah {isRequest ? 'Permintaan' : 'Transfer'}</label>
                         <input
                             type="number"
                             value={amount}
@@ -78,11 +88,15 @@ export default function WalletTransferModal({ wallet, onClose, onTransfer }) {
                     </div>
 
                     <div>
-                        <label className="text-sm text-secondary">Ke Kategori (Pagu Anggaran)</label>
+                        <label className="text-sm text-secondary">
+                            {isRequest ? 'Dari Kategori (Pagu Anggaran)' : 'Ke Kategori (Pagu Anggaran)'}
+                        </label>
                         <select value={category} onChange={(e) => setCategory(e.target.value)} required>
-                            <option value="">Pilih Kategori Tujuan</option>
+                            <option value="">{isRequest ? 'Pilih Kategori Sumber' : 'Pilih Kategori Tujuan'}</option>
                             {categories.map(c => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
+                                <option key={c.id} value={c.id}>
+                                    {c.name} {isRequest ? `(Sisa Limit: ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(c.budget_limit || 0)})` : ''}
+                                </option>
                             ))}
                         </select>
                     </div>
@@ -92,7 +106,7 @@ export default function WalletTransferModal({ wallet, onClose, onTransfer }) {
                             Batal
                         </button>
                         <button type="submit" className="btn btn-primary" disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
-                            {loading ? 'Proses Transfer' : 'Konfirmasi'}
+                            {loading ? (isRequest ? 'Memproses...' : 'Proses Transfer') : 'Konfirmasi'}
                         </button>
                     </div>
                 </form>

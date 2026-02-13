@@ -47,25 +47,48 @@ export default function WalletCard({ name, type, balance, icon, onTransfer }) {
                         {type}
                     </span>
                     {onTransfer && (
-                        <button
-                            onClick={onTransfer}
-                            title="Transfer ke Anggaran"
-                            style={{
-                                background: 'rgba(255,255,255,0.2)',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '30px',
-                                height: '30px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                color: 'inherit',
-                                transition: 'background 0.2s'
-                            }}
-                        >
-                            <MdSend size={14} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                            <button
+                                onClick={onTransfer}
+                                title="Transfer ke Anggaran"
+                                style={{
+                                    background: 'rgba(255,255,255,0.2)',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '30px',
+                                    height: '30px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'inherit',
+                                    transition: 'background 0.2s'
+                                }}
+                            >
+                                <MdSend size={14} />
+                            </button>
+                            {/* New Button: Request Funds */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onTransfer(true); }} // Pass true to indicate "Request" mode
+                                title="Minta Dana dari Anggaran"
+                                style={{
+                                    background: 'rgba(255,255,255,0.2)',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '30px',
+                                    height: '30px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'inherit',
+                                    transition: 'background 0.2s',
+                                    transform: 'rotate(180deg)' // Rotate Send icon to look like Receive
+                                }}
+                            >
+                                <MdSend size={14} />
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
