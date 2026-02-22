@@ -8,8 +8,10 @@ import { useRealtime } from '../hooks/useRealtime';
 export default function Transactions() {
     const { selectedDate } = useOutletContext();
     const [transactions, setTransactions] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('');
 
     const fetchTransactions = async () => {
         try {
@@ -25,8 +27,18 @@ export default function Transactions() {
         }
     };
 
+    const fetchCategories = async () => {
+        try {
+            const data = await api.getCategories();
+            setCategories(data || []);
+        } catch (error) {
+            console.error('Failed to fetch categories', error);
+        }
+    };
+
     useEffect(() => {
         fetchTransactions();
+        fetchCategories();
     }, [selectedDate]);
 
     useRealtime(['transactions', 'categories', 'wallets'], fetchTransactions);
@@ -37,30 +49,54 @@ export default function Transactions() {
 
     const filteredTransactions = transactions.filter((t) => {
         const query = searchQuery.toLowerCase();
-        return (
+        const matchesSearch = (
             (t.description || '').toLowerCase().includes(query) ||
             (t.amount || 0).toString().includes(query) ||
             (t.category?.name || '').toLowerCase().includes(query)
         );
+        const matchesCategory = !selectedCategory || t.category_id === selectedCategory;
+        return matchesSearch && matchesCategory;
     });
 
     return (
         <div className="container" style={{ paddingTop: '1rem', paddingBottom: '2rem' }}>
             <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 className="text-xl">Transaksi</h2>
-                <input
-                    type="text"
-                    placeholder="Cari transaksi..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{
-                        padding: '0.5rem 1rem',
-                        borderRadius: '0.375rem',
-                        border: '1px solid #e2e8f0',
-                        fontSize: '0.875rem',
-                        width: '200px'
-                    }}
-                />
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '0.375rem',
+                            border: '1px solid #e2e8f0',
+                            fontSize: '0.875rem',
+                            outline: 'none',
+                            backgroundColor: 'white'
+                        }}
+                    >
+                        <option value="">Semua Kategori</option>
+                        {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                            </option>
+                        ))}
+                    </select>
+                    <input
+                        type="text"
+                        placeholder="Cari transaksi..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '0.375rem',
+                            border: '1px solid #e2e8f0',
+                            fontSize: '0.875rem',
+                            width: '200px',
+                            outline: 'none'
+                        }}
+                    />
+                </div>
             </header>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
