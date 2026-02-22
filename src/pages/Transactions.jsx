@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import TransactionForm from '../components/TransactionForm';
 import RecentTransactions from '../components/RecentTransactions';
@@ -13,7 +13,7 @@ export default function Transactions() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
 
-    const fetchTransactions = async () => {
+    const fetchTransactions = useCallback(async () => {
         try {
             setLoading(true);
             const month = selectedDate.getMonth();
@@ -25,23 +25,24 @@ export default function Transactions() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedDate]);
 
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         try {
             const data = await api.getCategories();
             setCategories(data || []);
         } catch (error) {
             console.error('Failed to fetch categories', error);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchTransactions();
         fetchCategories();
-    }, [selectedDate]);
+    }, [fetchTransactions, fetchCategories]);
 
-    useRealtime(['transactions', 'categories', 'wallets'], fetchTransactions);
+    const realtimeTables = useMemo(() => ['transactions', 'categories', 'wallets'], []);
+    useRealtime(realtimeTables, fetchTransactions);
 
     const handleTransactionAdded = () => {
         fetchTransactions();
@@ -54,7 +55,7 @@ export default function Transactions() {
             (t.amount || 0).toString().includes(query) ||
             (t.category?.name || '').toLowerCase().includes(query)
         );
-        const matchesCategory = !selectedCategory || t.category_id === selectedCategory;
+        const matchesCategory = !selectedCategory || String(t.category_id) === selectedCategory;
         return matchesSearch && matchesCategory;
     });
 
