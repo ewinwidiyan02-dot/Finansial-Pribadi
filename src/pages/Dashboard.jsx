@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { MdAccountBalanceWallet, MdArrowUpward, MdArrowDownward, MdPieChart, MdTrendingUp, MdLocalGasStation } from 'react-icons/md';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -18,7 +18,7 @@ export default function Dashboard() {
     const [fuelData, setFuelData] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    async function loadData() {
+    const loadData = useCallback(async () => {
         try {
             const month = selectedDate.getMonth();
             const year = selectedDate.getFullYear();
@@ -56,13 +56,14 @@ export default function Dashboard() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [selectedDate]);
 
     useEffect(() => {
         loadData();
-    }, [selectedDate]);
+    }, [loadData]);
 
-    useRealtime(['wallets', 'transactions', 'categories', 'fuel_logs'], loadData);
+    const realtimeTables = useMemo(() => ['wallets', 'transactions', 'categories', 'fuel_logs'], []);
+    useRealtime(realtimeTables, loadData);
 
     const remainingBudget = Math.max(0, data.summary.budgetLimit - (data.summary.budgetUsed ?? data.summary.expense));
 
@@ -122,8 +123,8 @@ export default function Dashboard() {
                                 <MdLocalGasStation style={{ color: 'var(--secondary-color)', fontSize: '1.5rem' }} />
                                 <h3>Konsumsi BBM (Jarak Tempuh)</h3>
                             </div>
-                            <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
-                                <ResponsiveContainer width="100%" height="100%">
+                            <div style={{ flex: 1, width: '100%', minHeight: 0 }} key={fuelData.length}>
+                                <ResponsiveContainer width="99%" height="100%">
                                     <BarChart
                                         data={fuelData}
                                         margin={{ top: 10, right: 30, left: 0, bottom: 0 }}

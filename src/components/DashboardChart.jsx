@@ -34,10 +34,10 @@ export default function DashboardChart({ data }) {
     };
 
     return (
-        <div className="card" style={{ height: '350px', display: 'flex', flexDirection: 'column' }}>
+        <div className="card" style={{ height: '350px', display: 'flex', flexDirection: 'column' }} key={data.length}>
             <h3 style={{ marginBottom: '1.5rem' }}>Tren Pengeluaran Harian</h3>
             <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="99%" height="100%">
                     <LineChart
                         data={data}
                         margin={{ top: 10, right: 20, left: 10, bottom: 0 }}
