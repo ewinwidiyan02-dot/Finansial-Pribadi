@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import TransactionForm from '../components/TransactionForm';
 import RecentTransactions from '../components/RecentTransactions';
 import { api } from '../services/api';
+import { useRealtime } from '../hooks/useRealtime';
 
 export default function Transactions() {
     const { selectedDate } = useOutletContext();
@@ -27,6 +28,8 @@ export default function Transactions() {
     useEffect(() => {
         fetchTransactions();
     }, [selectedDate]);
+
+    useRealtime(['transactions', 'categories', 'wallets'], fetchTransactions);
 
     const handleTransactionAdded = () => {
         fetchTransactions();

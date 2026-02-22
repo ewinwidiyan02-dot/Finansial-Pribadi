@@ -5,6 +5,7 @@ import BudgetCard from '../components/BudgetCard';
 import CategoryForm from '../components/CategoryForm';
 import TransferModal from '../components/TransferModal';
 import { api } from '../services/api';
+import { useRealtime } from '../hooks/useRealtime';
 
 const ICON_MAP = {
     'MdRestaurant': <MdRestaurant />,
@@ -42,6 +43,8 @@ export default function Budget() {
     useEffect(() => {
         fetchBudgets();
     }, [selectedDate]);
+
+    useRealtime(['categories', 'transactions'], fetchBudgets);
 
     const handleEdit = (category) => {
         setEditingCategory(category);

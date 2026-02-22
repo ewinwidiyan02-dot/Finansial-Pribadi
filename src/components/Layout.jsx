@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { MdDashboard, MdReceipt, MdPieChart, MdShowChart, MdAccountBalanceWallet, MdLocalGasStation, MdDarkMode, MdLightMode, MdChevronLeft, MdChevronRight } from 'react-icons/md';
+import { MdDashboard, MdReceipt, MdPieChart, MdAccountBalanceWallet, MdLocalGasStation, MdDarkMode, MdLightMode, MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import { useState, useEffect } from 'react';
 import './Layout.css';
 
@@ -7,7 +7,6 @@ const navItems = [
     { path: '/', label: 'Dashboard', icon: <MdDashboard /> },
     { path: '/transactions', label: 'Transaksi', icon: <MdReceipt /> },
     { path: '/budget', label: 'Pagu', icon: <MdPieChart /> },
-    { path: '/trends', label: 'Tren', icon: <MdShowChart /> },
     { path: '/wallet', label: 'Dompet', icon: <MdAccountBalanceWallet /> },
     { path: '/fuel', label: 'Konsumsi BBM', icon: <MdLocalGasStation /> },
 ];

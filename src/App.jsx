@@ -3,7 +3,6 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
 import Budget from './pages/Budget'
-import Trends from './pages/Trends'
 import Wallet from './pages/Wallet'
 import FuelConsumption from './pages/FuelConsumption'
 
@@ -15,7 +14,6 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="transactions" element={<Transactions />} />
           <Route path="budget" element={<Budget />} />
-          <Route path="trends" element={<Trends />} />
           <Route path="wallet" element={<Wallet />} />
           <Route path="fuel" element={<FuelConsumption />} />
         </Route>

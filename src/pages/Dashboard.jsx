@@ -6,6 +6,7 @@ import StatCard from '../components/StatCard';
 import DashboardChart from '../components/DashboardChart';
 import RecentTransactions from '../components/RecentTransactions';
 import { api } from '../services/api';
+import { useRealtime } from '../hooks/useRealtime';
 
 export default function Dashboard() {
     const { selectedDate } = useOutletContext();
@@ -33,9 +34,10 @@ export default function Dashboard() {
 
                     if (dist > 0) {
                         if (!vehicleStats[log.vehicle_type]) {
-                            vehicleStats[log.vehicle_type] = { distance: 0, fuelTypes: new Set() };
+                            vehicleStats[log.vehicle_type] = { distance: 0, fuelTypes: new Set(), total_liters: 0 };
                         }
                         vehicleStats[log.vehicle_type].distance += dist;
+                        vehicleStats[log.vehicle_type].total_liters += log.liters || 0;
                         if (log.fuel_type) {
                             vehicleStats[log.vehicle_type].fuelTypes.add(log.fuel_type);
                         }
@@ -44,6 +46,7 @@ export default function Dashboard() {
                 const chartData = Object.keys(vehicleStats).map(key => ({
                     name: key,
                     distance: vehicleStats[key].distance,
+                    total_liters: vehicleStats[key].total_liters,
                     fuelType: Array.from(vehicleStats[key].fuelTypes).join(', ')
                 }));
                 setFuelData(chartData);
@@ -58,6 +61,8 @@ export default function Dashboard() {
     useEffect(() => {
         loadData();
     }, [selectedDate]);
+
+    useRealtime(['wallets', 'transactions', 'categories', 'fuel_logs'], loadData);
 
     const remainingBudget = Math.max(0, data.summary.budgetLimit - (data.summary.budgetUsed ?? data.summary.expense));
 
@@ -143,17 +148,23 @@ export default function Dashboard() {
                                                 backgroundColor: 'var(--card-bg)',
                                                 color: 'var(--text-primary)'
                                             }}
-                                            formatter={(value, name, props) => [
-                                                <div key="val" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                    <span style={{ fontWeight: 600 }}>{value} km</span>
-                                                    {props.payload.fuelType && (
-                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
-                                                            {props.payload.fuelType}
-                                                        </span>
-                                                    )}
-                                                </div>,
-                                                ''
-                                            ]}
+                                            formatter={(value, name, props) => {
+                                                const kmPerLiter = props.payload.total_liters > 0
+                                                    ? (value / props.payload.total_liters).toFixed(1)
+                                                    : '-';
+                                                return [
+                                                    <div key="val" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                        <span style={{ fontWeight: 600 }}>Total Jarak: {value} km</span>
+                                                        <span style={{ fontWeight: 600, color: 'var(--success-color)' }}>Konsumsi: {kmPerLiter} km/liter</span>
+                                                        {props.payload.fuelType && (
+                                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                                                                {props.payload.fuelType}
+                                                            </span>
+                                                        )}
+                                                    </div>,
+                                                    ''
+                                                ];
+                                            }}
                                         />
                                         <Bar dataKey="distance" fill="var(--primary-color)" radius={[0, 4, 4, 0]} barSize={20} />
                                     </BarChart>

@@ -3,6 +3,7 @@ import WalletCard from '../components/WalletCard';
 import WalletForm from '../components/WalletForm';
 import WalletTransferModal from '../components/WalletTransferModal';
 import { api } from '../services/api';
+import { useRealtime } from '../hooks/useRealtime';
 
 export default function Wallet() {
     const [wallets, setWallets] = useState([]);
@@ -25,6 +26,8 @@ export default function Wallet() {
     useEffect(() => {
         fetchWallets();
     }, []);
+
+    useRealtime('wallets', fetchWallets);
 
     const handleWalletAdded = () => {
         setShowAddForm(false);

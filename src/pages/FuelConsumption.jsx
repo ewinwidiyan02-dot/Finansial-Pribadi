@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { api } from '../services/api';
 import { MdLocalGasStation, MdTimeline, MdDelete } from 'react-icons/md';
+import { useRealtime } from '../hooks/useRealtime';
 
 const FUEL_TYPES = ['Pertalite', 'Pertamax', 'Pertamax Turbo', 'Solar', 'Dexlite'];
 
@@ -37,6 +38,8 @@ export default function FuelConsumption() {
     useEffect(() => {
         fetchLogs();
     }, [selectedDate]);
+
+    useRealtime('fuel_logs', fetchLogs);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
