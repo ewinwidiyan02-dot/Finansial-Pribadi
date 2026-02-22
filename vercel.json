@@ -1,4 +1,5 @@
 {
+    "name": "finansial-pribadi",
     "rewrites": [
         {
             "source": "/(.*)",
