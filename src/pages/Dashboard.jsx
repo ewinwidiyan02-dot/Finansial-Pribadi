@@ -34,10 +34,11 @@ export default function Dashboard() {
 
                     if (dist > 0) {
                         if (!vehicleStats[log.vehicle_type]) {
-                            vehicleStats[log.vehicle_type] = { distance: 0, fuelTypes: new Set(), total_liters: 0 };
+                            vehicleStats[log.vehicle_type] = { distance: 0, fuelTypes: new Set(), total_liters: 0, total_cost: 0 };
                         }
                         vehicleStats[log.vehicle_type].distance += dist;
                         vehicleStats[log.vehicle_type].total_liters += log.liters || 0;
+                        vehicleStats[log.vehicle_type].total_cost += log.total_cost || 0;
                         if (log.fuel_type) {
                             vehicleStats[log.vehicle_type].fuelTypes.add(log.fuel_type);
                         }
@@ -47,6 +48,7 @@ export default function Dashboard() {
                     name: key,
                     distance: vehicleStats[key].distance,
                     total_liters: vehicleStats[key].total_liters,
+                    total_cost: vehicleStats[key].total_cost,
                     fuelType: Array.from(vehicleStats[key].fuelTypes).join(', ')
                 }));
                 setFuelData(chartData);
@@ -153,10 +155,12 @@ export default function Dashboard() {
                                                 const kmPerLiter = props.payload.total_liters > 0
                                                     ? (value / props.payload.total_liters).toFixed(1)
                                                     : '-';
+                                                const formattedCost = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(props.payload.total_cost || 0);
                                                 return [
                                                     <div key="val" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                         <span style={{ fontWeight: 600 }}>Total Jarak: {value} km</span>
                                                         <span style={{ fontWeight: 600, color: 'var(--success-color)' }}>Konsumsi: {kmPerLiter} km/liter</span>
+                                                        <span style={{ fontWeight: 600, color: 'var(--error-color)' }}>Biaya Total: {formattedCost}</span>
                                                         {props.payload.fuelType && (
                                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
                                                                 {props.payload.fuelType}
