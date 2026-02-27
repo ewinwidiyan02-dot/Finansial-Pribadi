@@ -82,6 +82,14 @@ export const api = {
             }
         }
 
+        // Update Category Budget for Income (e.g., Saving Lain-lain)
+        if (transaction.type === 'income' && transaction.category_id) {
+            const { data: cat } = await supabase.from('categories').select('budget_limit, name').eq('id', transaction.category_id).single();
+            if (cat && cat.name.toLowerCase() === 'saving lain-lain') {
+                await supabase.from('categories').update({ budget_limit: (cat.budget_limit || 0) + transaction.amount }).eq('id', transaction.category_id);
+            }
+        }
+
         return data[0];
     },
 
@@ -281,6 +289,13 @@ export const api = {
                     await supabase.from('wallets').update({ balance: wallet.balance - tx.amount }).eq('id', tx.wallet_id);
                 }
             }
+            // Deduct Category Budget if it was 'Saving Lain-lain'
+            if (tx.category_id) {
+                const { data: cat } = await supabase.from('categories').select('budget_limit, name').eq('id', tx.category_id).single();
+                if (cat && cat.name.toLowerCase() === 'saving lain-lain') {
+                    await supabase.from('categories').update({ budget_limit: Math.max(0, (cat.budget_limit || 0) - tx.amount) }).eq('id', tx.category_id);
+                }
+            }
         }
 
         // 3. Delete the Transaction
@@ -308,6 +323,13 @@ export const api = {
                     await supabase.from('wallets').update({ balance: wallet.balance - oldTx.amount }).eq('id', oldTx.wallet_id);
                 }
             }
+            // Deduct Category Budget if it was 'Saving Lain-lain'
+            if (oldTx.category_id) {
+                const { data: cat } = await supabase.from('categories').select('budget_limit, name').eq('id', oldTx.category_id).single();
+                if (cat && cat.name.toLowerCase() === 'saving lain-lain') {
+                    await supabase.from('categories').update({ budget_limit: Math.max(0, (cat.budget_limit || 0) - oldTx.amount) }).eq('id', oldTx.category_id);
+                }
+            }
         }
 
         // 2. Update Transaction Record
@@ -330,6 +352,13 @@ export const api = {
                 const { data: wallet } = await supabase.from('wallets').select('balance').eq('id', newTx.wallet_id).single();
                 if (wallet) {
                     await supabase.from('wallets').update({ balance: wallet.balance + newTx.amount }).eq('id', newTx.wallet_id);
+                }
+            }
+            // Add Category Budget if it is 'Saving Lain-lain'
+            if (newTx.category_id) {
+                const { data: cat } = await supabase.from('categories').select('budget_limit, name').eq('id', newTx.category_id).single();
+                if (cat && cat.name.toLowerCase() === 'saving lain-lain') {
+                    await supabase.from('categories').update({ budget_limit: (cat.budget_limit || 0) + newTx.amount }).eq('id', newTx.category_id);
                 }
             }
         }
