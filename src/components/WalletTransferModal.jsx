@@ -33,17 +33,17 @@ export default function WalletTransferModal({ wallet, onClose, onTransfer }) {
             return;
         }
 
+        if (!category) {
+            alert(isRequest ? 'Mohon pilih kategori sumber' : 'Mohon pilih kategori tujuan');
+            return;
+        }
+
         if (isRequest) {
             const selectedCat = categories.find(c => c.id == category);
             if (selectedCat && parseFloat(amount) > (selectedCat.budget_limit || 0)) {
                 alert('Pagu anggaran tidak mencukupi untuk diambil.');
                 return;
             }
-        }
-
-        if (!category) {
-            alert(isRequest ? 'Mohon pilih kategori sumber' : 'Mohon pilih kategori tujuan');
-            return;
         }
 
         setLoading(true);

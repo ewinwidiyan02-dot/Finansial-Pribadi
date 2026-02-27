@@ -272,13 +272,7 @@ export const api = {
                     await supabase.from('wallets').update({ balance: wallet.balance + tx.amount }).eq('id', tx.wallet_id);
                 }
             }
-            // Restore Category Budget
-            if (tx.category_id) {
-                const { data: cat } = await supabase.from('categories').select('budget_limit').eq('id', tx.category_id).single();
-                if (cat) {
-                    await supabase.from('categories').update({ budget_limit: (cat.budget_limit || 0) + tx.amount }).eq('id', tx.category_id);
-                }
-            }
+
         } else if (tx.type === 'income') {
             // Deduct Wallet Balance (Remove Income)
             if (tx.wallet_id) {
@@ -305,13 +299,7 @@ export const api = {
                     await supabase.from('wallets').update({ balance: wallet.balance + oldTx.amount }).eq('id', oldTx.wallet_id);
                 }
             }
-            // Restore Category Budget
-            if (oldTx.category_id) {
-                const { data: cat } = await supabase.from('categories').select('budget_limit').eq('id', oldTx.category_id).single();
-                if (cat) {
-                    await supabase.from('categories').update({ budget_limit: (cat.budget_limit || 0) + oldTx.amount }).eq('id', oldTx.category_id);
-                }
-            }
+
         } else if (oldTx.type === 'income') {
             // Restore Wallet Balance (Deduct income)
             if (oldTx.wallet_id) {
@@ -335,13 +323,7 @@ export const api = {
                     await supabase.from('wallets').update({ balance: wallet.balance - newTx.amount }).eq('id', newTx.wallet_id);
                 }
             }
-            // Deduct Category Budget
-            if (newTx.category_id) {
-                const { data: cat } = await supabase.from('categories').select('budget_limit').eq('id', newTx.category_id).single();
-                if (cat) {
-                    await supabase.from('categories').update({ budget_limit: (cat.budget_limit || 0) - newTx.amount }).eq('id', newTx.category_id);
-                }
-            }
+
         } else if (newTx.type === 'income') {
             // Add Wallet Balance
             if (newTx.wallet_id) {

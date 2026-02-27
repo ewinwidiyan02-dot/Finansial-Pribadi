@@ -36,18 +36,21 @@ export default function Wallet() {
 
     const handleTransfer = async ({ walletId, categoryId, amount, isRequest }) => {
         try {
+            // 1. Get Category Name for description
+            let categoryName = 'Anggaran';
+            const { data: categoryData } = await api.supabase.from('categories').select('name').eq('id', categoryId).single();
+            if (categoryData) categoryName = categoryData.name;
+
             if (isRequest) {
                 // CASE: Request Funds (Budget -> Wallet)
                 // 1. Create Income Transaction (Wallet receives money)
                 const transaction = {
                     type: 'income',
                     amount: amount,
-                    category_id: categoryId, // Optional: tag it to category for record? Or null? detailed requirement said "meminta dana tambahan dari pagu anggaran". 
-                    // If we tag it, it might count as negative expense? No, type is income.
-                    // Let's tag it so we know where it came from.
+                    category_id: null,
                     wallet_id: walletId,
                     date: new Date().toISOString().split('T')[0],
-                    description: 'Ambil dari Anggaran'
+                    description: `Ambil dari Pagu (${categoryName})`
                 };
                 await api.createTransaction(transaction);
 
@@ -64,10 +67,10 @@ export default function Wallet() {
                 const transaction = {
                     type: 'expense',
                     amount: amount,
-                    category_id: categoryId,
+                    category_id: null, // Avoid counting as spent so it increases remaining budget limit properly
                     wallet_id: walletId,
                     date: new Date().toISOString().split('T')[0],
-                    description: 'Transfer ke Anggaran (Pagu)'
+                    description: `Transfer ke Pagu (${categoryName})`
                 };
                 await api.createTransaction(transaction);
 
