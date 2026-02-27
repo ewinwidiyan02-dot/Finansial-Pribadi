@@ -23,25 +23,46 @@ export default function TransactionForm({ onTransactionAdded }) {
                     api.getCategories(),
                     api.getWallets()
                 ]);
-                setCategories(cats || []);
+                let currentCats = cats || [];
                 setWallets(wals || []);
 
                 // Set default wallet if available
-                if (wals && wals.length > 0) setWallet(wals[0].id);
+                if (wals && wals.length > 0) {
+                    setWallet(prev => prev || wals[0].id);
+                }
 
-                // Set default category to "Saving Lain-lain" for income
-                if (cats && type === 'income') {
-                    const defaultIncomeCat = cats.find(c => c.name.toLowerCase() === 'saving lain-lain' && c.type === 'income');
-                    if (defaultIncomeCat) {
-                        setCategory(defaultIncomeCat.id);
+                // Check or create "Saving Lain-lain" category for income
+                let defaultIncomeCat = currentCats.find(c => c.name.toLowerCase() === 'saving lain-lain' && c.type === 'income');
+                if (!defaultIncomeCat) {
+                    try {
+                        defaultIncomeCat = await api.createCategory({
+                            name: 'Saving Lain-lain',
+                            type: 'income',
+                            icon: '💰'
+                        });
+                        currentCats = [...currentCats, defaultIncomeCat];
+                    } catch (e) {
+                        console.error('Failed to auto-create category', e);
                     }
                 }
+                setCategories(currentCats);
+
             } catch (error) {
                 console.error('Failed to load options', error);
             }
         }
         loadOptions();
-    }, [type]); // Added type as dependency so when type changes, category updates
+    }, []);
+
+    // Effect for handling category changes when type changes
+    useEffect(() => {
+        if (type === 'income') {
+            const defaultIncomeCat = categories.find(c => c.name.toLowerCase() === 'saving lain-lain' && c.type === 'income');
+            if (defaultIncomeCat) setCategory(defaultIncomeCat.id);
+        } else {
+            setCategory(''); // reset category when switching to expense
+        }
+    }, [type, categories]);
 
     const processTransaction = async (sourceCategoryId = null) => {
         setLoading(true);
@@ -161,13 +182,25 @@ export default function TransactionForm({ onTransactionAdded }) {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div>
-                        <label className="text-sm text-secondary">Kategori (Opsional)</label>
-                        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                            <option value="">Pilih Kategori</option>
-                            {categories.filter(c => c.type === type).map(c => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
+                        <label className="text-sm text-secondary">Kategori {type !== 'income' && '(Opsional)'}</label>
+                        {type === 'income' ? (
+                            <div style={{
+                                padding: '0.75rem',
+                                backgroundColor: 'var(--bg-color, #f8fafc)',
+                                border: '1px solid var(--border-color, #e2e8f0)',
+                                borderRadius: '0.5rem',
+                                color: 'var(--text-secondary, #64748b)'
+                            }}>
+                                Saving Lain-lain
+                            </div>
+                        ) : (
+                            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                                <option value="">Pilih Kategori</option>
+                                {categories.filter(c => c.type === type).map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                     <div>
                         <label className="text-sm text-secondary">Dompet (Opsional)</label>
