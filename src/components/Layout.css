@@ -10,7 +10,7 @@
 /* Sidebar (Desktop) */
 .sidebar {
     width: 260px;
-    background-color: #FDE047; /* Bright Yellow / Yellow 300 */
+    background-color: var(--card-bg);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -78,7 +78,7 @@
 
 .top-bar {
     height: 64px;
-    background-color: #86EFAC; /* Light Green / Green 300 */
+    background-color: var(--card-bg);
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
