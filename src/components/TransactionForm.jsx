@@ -31,12 +31,12 @@ export default function TransactionForm({ onTransactionAdded }) {
                     setWallet(prev => prev || wals[0].id);
                 }
 
-                // Check or create "Saving Lain-lain" category for income
-                let defaultIncomeCat = currentCats.find(c => c.name.toLowerCase() === 'saving lain-lain' && c.type === 'income');
+                // Check or create "Saving Lain Lain" category for income
+                let defaultIncomeCat = currentCats.find(c => c.name.toLowerCase() === 'saving lain lain' && c.type === 'income');
                 if (!defaultIncomeCat) {
                     try {
                         defaultIncomeCat = await api.createCategory({
-                            name: 'Saving Lain-lain',
+                            name: 'Saving Lain Lain',
                             type: 'income',
                             icon: '💰'
                         });
@@ -57,7 +57,7 @@ export default function TransactionForm({ onTransactionAdded }) {
     // Effect for handling category changes when type changes
     useEffect(() => {
         if (type === 'income') {
-            const defaultIncomeCat = categories.find(c => c.name.toLowerCase() === 'saving lain-lain' && c.type === 'income');
+            const defaultIncomeCat = categories.find(c => c.name.toLowerCase() === 'saving lain lain' && c.type === 'income');
             if (defaultIncomeCat) setCategory(defaultIncomeCat.id);
         } else {
             setCategory(''); // reset category when switching to expense
@@ -191,7 +191,7 @@ export default function TransactionForm({ onTransactionAdded }) {
                                 borderRadius: '0.5rem',
                                 color: 'var(--text-secondary, #64748b)'
                             }}>
-                                Saving Lain-lain
+                                Saving Lain Lain
                             </div>
                         ) : (
                             <select value={category} onChange={(e) => setCategory(e.target.value)}>
