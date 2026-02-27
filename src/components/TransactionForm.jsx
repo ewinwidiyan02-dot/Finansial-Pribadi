@@ -31,13 +31,13 @@ export default function TransactionForm({ onTransactionAdded }) {
                     setWallet(prev => prev || wals[0].id);
                 }
 
-                // Check or create "Saving Lain Lain" category for income
-                let defaultIncomeCat = currentCats.find(c => c.name.toLowerCase() === 'saving lain lain' && c.type === 'income');
+                // Check or create "Saving Lain Lain" category for income (ignoring type because it might exist as 'expense')
+                let defaultIncomeCat = currentCats.find(c => c.name.toLowerCase() === 'saving lain lain');
                 if (!defaultIncomeCat) {
                     try {
                         defaultIncomeCat = await api.createCategory({
                             name: 'Saving Lain Lain',
-                            type: 'income',
+                            type: 'expense', // usually saving lain lain is expense budget
                             icon: '💰'
                         });
                         currentCats = [...currentCats, defaultIncomeCat];
@@ -57,7 +57,7 @@ export default function TransactionForm({ onTransactionAdded }) {
     // Effect for handling category changes when type changes
     useEffect(() => {
         if (type === 'income') {
-            const defaultIncomeCat = categories.find(c => c.name.toLowerCase() === 'saving lain lain' && c.type === 'income');
+            const defaultIncomeCat = categories.find(c => c.name.toLowerCase() === 'saving lain lain');
             if (defaultIncomeCat) setCategory(defaultIncomeCat.id);
         } else {
             setCategory(''); // reset category when switching to expense
