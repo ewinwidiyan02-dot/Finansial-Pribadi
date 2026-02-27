@@ -28,12 +28,20 @@ export default function TransactionForm({ onTransactionAdded }) {
 
                 // Set default wallet if available
                 if (wals && wals.length > 0) setWallet(wals[0].id);
+
+                // Set default category to "Saving Lain-lain" for income
+                if (cats && type === 'income') {
+                    const defaultIncomeCat = cats.find(c => c.name.toLowerCase() === 'saving lain-lain' && c.type === 'income');
+                    if (defaultIncomeCat) {
+                        setCategory(defaultIncomeCat.id);
+                    }
+                }
             } catch (error) {
                 console.error('Failed to load options', error);
             }
         }
         loadOptions();
-    }, []);
+    }, [type]); // Added type as dependency so when type changes, category updates
 
     const processTransaction = async (sourceCategoryId = null) => {
         setLoading(true);
