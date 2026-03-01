@@ -130,9 +130,19 @@ export const api = {
             ?.filter(t => t.type === 'expense' && t.category_id !== null)
             .reduce((acc, t) => acc + t.amount, 0) || 0;
 
-        // 3. Get Budget Limits
-        const { data: categories } = await supabase.from('categories').select('budget_limit, type');
-        const totalBudgetLimit = categories?.filter(c => c.type === 'expense').reduce((acc, curr) => acc + (curr.budget_limit || 0), 0) || 0;
+        // 3. Get Budget Limits and Rollovers
+        const { data: categories } = await supabase.from('categories').select('id, budget_limit, type');
+        let totalBudgetLimit = categories?.filter(c => c.type === 'expense').reduce((acc, curr) => acc + (curr.budget_limit || 0), 0) || 0;
+
+        // Fetch rollovers for this month
+        const { data: rollovers } = await supabase
+            .from('budget_rollovers')
+            .select('amount')
+            .eq('month', targetMonth)
+            .eq('year', targetYear);
+
+        const totalRollover = rollovers?.reduce((acc, curr) => acc + (curr.amount || 0), 0) || 0;
+        totalBudgetLimit += totalRollover;
 
         // 4. Get Recent Transactions (Filtered by month if needed, but usually recent is just recent regardless of month filter? 
         // User asked: "mulai dari transaksi, pagu, dan dashboard." implying list should also filter.)
@@ -197,8 +207,21 @@ export const api = {
             spentByCategory[t.category_id] = (spentByCategory[t.category_id] || 0) + t.amount;
         });
 
+        // Get rollovers for this month
+        const { data: rollovers } = await supabase
+            .from('budget_rollovers')
+            .select('*')
+            .eq('month', targetMonth)
+            .eq('year', targetYear);
+
+        const rolloversByCategory = {};
+        rollovers?.forEach(r => {
+            rolloversByCategory[r.category_id] = r.amount;
+        });
+
         return categories.map(cat => ({
             ...cat,
+            budget_limit: (cat.budget_limit || 0) + (rolloversByCategory[cat.id] || 0), // Base limit + Rollover
             spent: spentByCategory[cat.id] || 0
         }));
     },
@@ -222,13 +245,94 @@ export const api = {
             .gte('date', startOfMonth);
 
         const spent = transactions?.reduce((acc, t) => acc + t.amount, 0) || 0;
-        const remaining = (category.budget_limit || 0) - spent;
+        // Get Rollover for this month
+        const { data: rollover } = await supabase
+            .from('budget_rollovers')
+            .select('amount')
+            .eq('category_id', categoryId)
+            .eq('month', date.getMonth())
+            .eq('year', date.getFullYear())
+            .single();
+
+        const rolloverAmount = rollover ? rollover.amount : 0;
+        const totalLimit = (category.budget_limit || 0) + rolloverAmount;
+        const remaining = totalLimit - spent;
 
         return {
-            limit: category.budget_limit || 0,
+            limit: totalLimit,
             spent,
             remaining
         };
+    },
+
+    processMonthlyRollover: async (fromMonth, fromYear, toMonth, toYear) => {
+        // 1. Get all categories
+        const { data: categories } = await supabase.from('categories').select('id, budget_limit').eq('type', 'expense');
+
+        // 2. Determine start and end date for "from" month
+        const startDate = new Date(fromYear, fromMonth, 1).toLocaleDateString('en-CA');
+        const endDate = new Date(fromYear, fromMonth + 1, 0).toLocaleDateString('en-CA');
+
+        // 3. Get transactions for the "from" month
+        const { data: transactions } = await supabase
+            .from('transactions')
+            .select('amount, category_id')
+            .eq('type', 'expense')
+            .gte('date', startDate)
+            .lte('date', endDate);
+
+        const spentByCategory = {};
+        transactions?.forEach(t => {
+            spentByCategory[t.category_id] = (spentByCategory[t.category_id] || 0) + t.amount;
+        });
+
+        // 4. Get previous rollovers that were applied TO the "from" month (so we know the true limit of that month)
+        const { data: pastRollovers } = await supabase
+            .from('budget_rollovers')
+            .select('*')
+            .eq('month', fromMonth)
+            .eq('year', fromYear);
+
+        const pastRolloversByCategory = {};
+        pastRollovers?.forEach(r => {
+            pastRolloversByCategory[r.category_id] = r.amount;
+        });
+
+        const newRollovers = [];
+
+        // 5. Calculate remaining for each category and prep inserts
+        categories?.forEach(cat => {
+            const baseLimit = cat.budget_limit || 0;
+            const pastRollover = pastRolloversByCategory[cat.id] || 0;
+            const trueLimit = baseLimit + pastRollover;
+
+            const spent = spentByCategory[cat.id] || 0;
+            const remaining = Math.max(0, trueLimit - spent);
+
+            if (remaining > 0) {
+                newRollovers.push({
+                    category_id: cat.id,
+                    month: toMonth,
+                    year: toYear,
+                    amount: remaining
+                });
+            }
+        });
+
+        // 6. Delete any existing rollovers for the target month first (to make it idempotent)
+        await supabase
+            .from('budget_rollovers')
+            .delete()
+            .eq('month', toMonth)
+            .eq('year', toYear);
+
+        // 7. Insert the new rollovers
+        if (newRollovers.length > 0) {
+            const { error } = await supabase.from('budget_rollovers').insert(newRollovers);
+            if (error) throw error;
+        }
+
+        return true;
     },
 
 

@@ -24,6 +24,7 @@ export default function Budget() {
     const [showForm, setShowForm] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
     const [transferCategory, setTransferCategory] = useState(null);
+    const [isRollingOver, setIsRollingOver] = useState(false);
 
     async function fetchBudgets() {
         try {
@@ -67,6 +68,33 @@ export default function Budget() {
         setShowForm(false);
         setEditingCategory(null);
         fetchBudgets();
+    };
+
+    const handleRollover = async () => {
+        const confirmMsg = `Pindahkan sisa pagu bulan ini (Bulan ${selectedDate.getMonth() + 1}) ke bulan depan?`;
+        if (window.confirm(confirmMsg)) {
+            try {
+                setIsRollingOver(true);
+                const currentMonth = selectedDate.getMonth();
+                const currentYear = selectedDate.getFullYear();
+
+                let nextMonth = currentMonth + 1;
+                let nextYear = currentYear;
+                if (nextMonth > 11) {
+                    nextMonth = 0;
+                    nextYear += 1;
+                }
+
+                await api.processMonthlyRollover(currentMonth, currentYear, nextMonth, nextYear);
+                alert("Berhasil mentransfer sisa pagu ke bulan berikutnya!");
+                fetchBudgets();
+            } catch (error) {
+                console.error("Rollover failed", error);
+                alert("Gagal memindahkan pagu bulan ini.");
+            } finally {
+                setIsRollingOver(false);
+            }
+        }
     };
 
     const handleTransfer = async ({ type, amount, walletId, useWallet, targetCategoryId }) => {
@@ -149,9 +177,20 @@ export default function Budget() {
                     <p className="text-secondary text-sm">Monitor pengeluaran per kategori</p>
                 </div>
                 {!showForm && (
-                    <button className="btn btn-primary" onClick={() => { setEditingCategory(null); setShowForm(true); }}>
-                        <MdAdd style={{ marginRight: '4px' }} /> Atur Pagu
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            className="btn"
+                            style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                            onClick={handleRollover}
+                            disabled={isRollingOver}
+                            title="Tutup Bulan & Transfer Sisa Anggaran"
+                        >
+                            {isRollingOver ? 'Memproses...' : 'Tutup Bulan'}
+                        </button>
+                        <button className="btn btn-primary" onClick={() => { setEditingCategory(null); setShowForm(true); }}>
+                            <MdAdd style={{ marginRight: '4px' }} /> Atur Pagu
+                        </button>
+                    </div>
                 )}
             </header>
 
